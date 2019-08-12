@@ -1,0 +1,7 @@
+node_modules
+secrets
+!secrets/.gitkeep
+!photos/.gitkeep
+photos
+.DS_Store
+.idea
