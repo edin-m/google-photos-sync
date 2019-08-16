@@ -1,0 +1,6 @@
+{
+  "mediaItemsRefresh": {
+    "jobCron": "0 * * * *",
+    "numberOfItems": 100
+  }
+}
