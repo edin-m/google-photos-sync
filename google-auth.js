@@ -8,111 +8,111 @@ const path = require('path');
 const moment = require('moment');
 
 const CREDENTIALS = require('./secrets/credentials.json').web;
-
-class GoogleOAuth2 {
-    constructor() {
-        this.code = {
-            res: {
-                code: null
-            },
-            date: null
-        };
-        this.auth = {
-            res: {
-                access_token: null,
-                scope: null,
-                expires_in: null,
-                token_type: null,
-                id_token: null
-            },
-            date: null
-        };
-        this.port = 3001;
-        this.cbUrl = `http://localhost:${this.port}/oauth2redirect`;
-    }
-
-    async authenticate(scopes = []) {
-        return new Promise((resolve, reject) => {
-            const scopesStr = scopes.join(' ');
-
-            const url = `${CREDENTIALS.auth_uri}?` +
-                `scope=${scopesStr}&` +
-                `response_type=code&` +
-                `redirect_uri=${this.cbUrl}&` +
-                `client_id=${CREDENTIALS.client_id}`;
-
-            const app = express();
-
-            const server = app.listen(3001, () => {
-                opn(url, { wait: false }).then(cb => cb.unref());
-            });
-
-            app.get('/oauth2redirect', async(req, res) => {
-                res.end('Authentication successful! Please return to the console.');
-                server.close();
-
-                this.code.res = req.query;
-                const token = await this.getToken();
-
-                resolve(token);
-            });
-        });
-    }
-
-    async getToken() {
-        if (this.auth.res.access_token === null) {
-            return new Promise((resolve, reject) => {
-                request.post(CREDENTIALS.token_uri, {
-                    form: {
-                        code: this.code.res.code,
-                        client_id: CREDENTIALS.client_id,
-                        client_secret: CREDENTIALS.client_secret,
-                        redirect_uri: this.cbUrl,
-                        grant_type: 'authorization_code'
-                    }
-                }, (err, resp, body) => {
-                    if (err) console.error(err);
-                    this.auth.res = JSON.parse(body);
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve(this.auth);
-                    }
-                });
-            });
-        } else {
-            return this.auth;
-        }
-    }
-}
-
-class GoogleOAuthStorage {
-    constructor(googleOAuth2) {
-        this.googleOAuth2 = googleOAuth2;
-        this.filePath = GoogleOAuthStorage.createFilePath();
-    }
-
-    async saveToken() {
-        const token = await this.googleOAuth2.getToken();
-        fs.writeFileSync(this.filePath, JSON.stringify(token, null, 4));
-    }
-
-    async loadToken() {
-        let loaded = false;
-
-        if (fs.existsSync(this.filePath)) {
-            const auth = JSON.parse(fs.readFileSync(this.filePath).toString());
-            this.googleOAuth2.auth = auth;
-            loaded = true;
-        }
-
-        return loaded;
-    }
-
-    static createFilePath() {
-        return path.join(process.cwd(), 'secrets/token.json');
-    }
-}
+//
+// class GoogleOAuth2 {
+//     constructor() {
+//         this.code = {
+//             res: {
+//                 code: null
+//             },
+//             date: null
+//         };
+//         this.auth = {
+//             res: {
+//                 access_token: null,
+//                 scope: null,
+//                 expires_in: null,
+//                 token_type: null,
+//                 id_token: null
+//             },
+//             date: null
+//         };
+//         this.port = 3001;
+//         this.cbUrl = `http://localhost:${this.port}/oauth2redirect`;
+//     }
+//
+//     async authenticate(scopes = []) {
+//         return new Promise((resolve, reject) => {
+//             const scopesStr = scopes.join(' ');
+//
+//             const url = `${CREDENTIALS.auth_uri}?` +
+//                 `scope=${scopesStr}&` +
+//                 `response_type=code&` +
+//                 `redirect_uri=${this.cbUrl}&` +
+//                 `client_id=${CREDENTIALS.client_id}`;
+//
+//             const app = express();
+//
+//             const server = app.listen(3001, () => {
+//                 opn(url, { wait: false }).then(cb => cb.unref());
+//             });
+//
+//             app.get('/oauth2redirect', async(req, res) => {
+//                 res.end('Authentication successful! Please return to the console.');
+//                 server.close();
+//
+//                 this.code.res = req.query;
+//                 const token = await this.getToken();
+//
+//                 resolve(token);
+//             });
+//         });
+//     }
+//
+//     async getToken() {
+//         if (this.auth.res.access_token === null) {
+//             return new Promise((resolve, reject) => {
+//                 request.post(CREDENTIALS.token_uri, {
+//                     form: {
+//                         code: this.code.res.code,
+//                         client_id: CREDENTIALS.client_id,
+//                         client_secret: CREDENTIALS.client_secret,
+//                         redirect_uri: this.cbUrl,
+//                         grant_type: 'authorization_code'
+//                     }
+//                 }, (err, resp, body) => {
+//                     if (err) console.error(err);
+//                     this.auth.res = JSON.parse(body);
+//                     if (err) {
+//                         reject(err);
+//                     } else {
+//                         resolve(this.auth);
+//                     }
+//                 });
+//             });
+//         } else {
+//             return this.auth;
+//         }
+//     }
+// }
+//
+// class GoogleOAuthStorage {
+//     constructor(googleOAuth2) {
+//         this.googleOAuth2 = googleOAuth2;
+//         this.filePath = GoogleOAuthStorage.createFilePath();
+//     }
+//
+//     async saveToken() {
+//         const token = await this.googleOAuth2.getToken();
+//         fs.writeFileSync(this.filePath, JSON.stringify(token, null, 4));
+//     }
+//
+//     async loadToken() {
+//         let loaded = false;
+//
+//         if (fs.existsSync(this.filePath)) {
+//             const auth = JSON.parse(fs.readFileSync(this.filePath).toString());
+//             this.googleOAuth2.auth = auth;
+//             loaded = true;
+//         }
+//
+//         return loaded;
+//     }
+//
+//     static createFilePath() {
+//         return path.join(process.cwd(), 'secrets/token.json');
+//     }
+// }
 
 // class GooglePhotosApi {
 //     constructor(googleOAuth2) {
@@ -239,10 +239,18 @@ class AuthStorage {
         try {
             token = JSON.parse(data);
         } catch (err) {
-            console.error('error parsing loaded token', err);
+            console.log(err);
+            token = null;
         }
 
-        return token;
+        const isTokenValid = !!token && !!token.token &&
+            !!token.token.expires_in && !!token.token.access_token;
+
+        if (isTokenValid) {
+            return token;
+        }
+
+        return null;
     }
 
     _getTokenFilePath() {
@@ -254,12 +262,25 @@ class AuthService {
 
     constructor(authStorage) {
         this.authStorage = authStorage;
+
         this.config = {};
+        this.config.requiredScopes = [];
         this.config.listenOnPort = 3001;
         this.config.cbUrl = `http://localhost:${this.config.listenOnPort}/oauth2redirect`;
+
+        this.cachedToken = null;
+        this.cbServerTimer = null;
+    }
+
+    async getToken() {
+        if (!this.cachedToken) {
+            this.cachedToken = await this.authenticate(this.config.requiredScopes);
+        }
+        return this.cachedToken;
     }
 
     async authenticate(scopes = []) {
+        this.config.requiredScopes = scopes;
         const storedToken = this.authStorage.loadToken();
 
         if (!storedToken) {
@@ -268,16 +289,18 @@ class AuthService {
 
         let authToken = storedToken.token;
 
-        if (this._shouldRefreshToken(storedToken)) {
-            authToken = await this._refreshToken(authToken);
+        if (this._isTokenExpired(storedToken)) {
+            console.log('expired');
+            authToken = this._refreshToken(authToken);
         }
 
+        this.cachedToken = authToken;
         return authToken;
     }
 
     async _authenticate(scopes = []) {
         return new Promise((resolve, reject) => {
-            const url = this._setAuthorizationParameters(scopes);
+            const url = this._setAuthorizationParameters(scopes, this.config.cbUrl);
 
             const app = express();
 
@@ -296,17 +319,21 @@ class AuthService {
 
                 const { code, scope: approvedScopes } = req.query;
 
-                if (!this._isPhotosReadonlyApproved(approvedScopes)) {
-                    return reject(`Approved scopes are not sufficient; approved: ${approvedScopes}`);
+                if (!this._isRequiredScopesApproved(approvedScopes)) {
+                    return reject(`Approved scopes are not sufficient; approved: ${approvedScopes}, required: ${this.config.requiredScopes}`);
                 }
 
                 const tokenRequest = this._createAuthorizationTokenRequest(code, this.config.cbUrl);
                 const authToken = await this._getToken(tokenRequest);
+                console.log('auth token ', authToken.access_token);
                 this.authStorage.storeToken(authToken);
                 resolve(authToken);
+
+                clearTimeout(this.cbServerTimer);
+                server.close();
             });
 
-            setTimeout(() => server.close(), 10000);
+            this.cbServerTimer = setTimeout(() => server.close(), 30000);
         });
     }
 
@@ -333,8 +360,11 @@ class AuthService {
         return msg;
     }
 
-    _isPhotosReadonlyApproved(approvedScopes) {
-        return approvedScopes.split(' ').includes(GooglePhotosApi.photosApiReadOnlyScope());
+    _isRequiredScopesApproved(approvedScopes) {
+        const requiredScopesSet = new Set(this.config.requiredScopes);
+        const approved = approvedScopes.split(' ').filter(x => requiredScopesSet.has(x));
+
+        return approved.length === this.config.requiredScopes.length;
     }
 
     _createAuthorizationTokenRequest(code, cbUrl) {
@@ -347,7 +377,7 @@ class AuthService {
         };
     }
 
-    _shouldRefreshToken(storedToken) {
+    _isTokenExpired(storedToken) {
         const expiresInInSec = storedToken.token.expires_in;
         const tokenExpiresAt = moment.utc(storedToken.tokenCreatedAt).add(expiresInInSec, 'seconds');
 
@@ -365,9 +395,9 @@ class AuthService {
         }
 
         const { access_token, expires_in, token_type } = refreshToken;
-        refreshToken.access_token = access_token;
-        refreshToken.expires_in = expires_in;
-        refreshToken.token_type = token_type;
+        authToken.access_token = access_token;
+        authToken.expires_in = expires_in;
+        authToken.token_type = token_type;
 
         this.authStorage.storeToken(authToken);
 
@@ -398,21 +428,6 @@ class AuthService {
         });
     }
 }
-
-//
-// async function test2() {
-//     const authStorage = new AuthStorage();
-//     const authService = new AuthService(authStorage);
-//
-//     const scopes = [].concat(GooglePhotosApi.listOfScopes());
-//     const auth = await authService.authenticate(scopes);
-//
-//     console.log('=====');
-//     console.log(JSON.stringify(auth, null, 4));
-// }
-//
-//
-// test2().catch(err => console.log(err));
 
 module.exports = {
     AuthStorage,
