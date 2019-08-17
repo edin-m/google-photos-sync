@@ -1,30 +1,15 @@
-const now = (unit) => {
+const fs = require('fs');
+const path = require('path');
 
-    const hrTime = process.hrtime();
-
-    switch (unit) {
-
-        case 'milli':
-            return hrTime[0] * 1000 + hrTime[1] / 1000000;
-
-        case 'micro':
-            return hrTime[0] * 1000000 + hrTime[1] / 1000;
-
-        case 'nano':
-            return hrTime[0] * 1000000000 + hrTime[1];
-
-        default:
-            return now('nano');
-    }
-
-};
+const mkdirp = require('mkdirp');
 
 class Downloader {
     constructor(storage, googlePhotos, downloadPath) {
         this.storage = storage;
         this.googlePhotos = googlePhotos;
 
-        // this.downloadPath = downloadPath;
+        this.downloadPath = downloadPath;
+        mkdirp(downloadPath);
         this.pageSize = 100;
 
         this.downloaderState = this.storage.get('class.Downloader.state');
@@ -50,6 +35,16 @@ class Downloader {
         }
 
         return mediaItems;
+    }
+
+    async downloadMediaItemFiles(mediaItemIds) {
+        const mediaItems = await this.googlePhotos.batchGet(mediaItemIds);
+
+        mediaItems.forEach(async (mediaItem) => {
+            const where = path.join(this.downloadPath, mediaItem.filename);
+            const stream = await this.googlePhotos.createDownloadStream(mediaItem);
+            stream.pipe(fs.createWriteStream(where));
+        });
     }
 
     // async downloadAndStoreAllMediaItems() {

@@ -2,5 +2,13 @@
   "mediaItemsRefresh": {
     "jobCron": "0 * * * *",
     "numberOfItems": 100
+  },
+  "contentLengthRefresh": {
+    "jobCron": "0 15 * * *",
+    "numberOfItems": 100
+  },
+  "mediaItemsDownload": {
+    "jobCron": "0 * * * *",
+    "numberOfItems": 100
   }
 }

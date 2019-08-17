@@ -276,6 +276,7 @@ class AuthService {
         if (!this.cachedToken) {
             this.cachedToken = await this.authenticate(this.config.requiredScopes);
         }
+
         return this.cachedToken;
     }
 
@@ -290,7 +291,7 @@ class AuthService {
         let authToken = storedToken.token;
 
         if (this._isTokenExpired(storedToken)) {
-            console.log('expired');
+            console.log('Token is expired. Renewing.');
             authToken = this._refreshToken(authToken);
         }
 
@@ -325,7 +326,6 @@ class AuthService {
 
                 const tokenRequest = this._createAuthorizationTokenRequest(code, this.config.cbUrl);
                 const authToken = await this._getToken(tokenRequest);
-                console.log('auth token ', authToken.access_token);
                 this.authStorage.storeToken(authToken);
                 resolve(authToken);
 

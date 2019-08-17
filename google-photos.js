@@ -1,4 +1,4 @@
-const URL = require('url').URL;
+const { URL } = require('url');
 
 const request = require('request');
 
@@ -18,8 +18,57 @@ class GooglePhotos {
         return 'https://www.googleapis.com/auth/photoslibrary.readonly';
     }
 
-    batchGet(mediaItemIds) {
+    async getMediaItem(mediaItemId) {
+        const url = `${GooglePhotos.APIs.mediaItems}/${mediaItemId}`;
 
+        return this._getRequest(url);
+    }
+
+    async batchGet(mediaItemIds) {
+        const BATCH_GET_LIMIT = 49;
+        return this._batchGetSpliced(mediaItemIds, BATCH_GET_LIMIT);
+    }
+
+    async _batchGetSpliced(mediaItemIds, BATCH_GET_LIMIT) {
+        // TODO: remove this, use only dumb version; split to groups somewhere else
+        const groups = Math.ceil(mediaItemIds.length / BATCH_GET_LIMIT);
+        const results = [];
+
+        for (let i = 0; i < groups; i++) {
+            const startIdx = i * BATCH_GET_LIMIT;
+            const endIdx = i * BATCH_GET_LIMIT + BATCH_GET_LIMIT;
+
+            const sliceIds = mediaItemIds.slice(startIdx, endIdx);
+
+            const batch = await this._batchGet(sliceIds);
+            batch.forEach(item => results.push(item));
+        }
+
+        return results;
+    }
+
+    async _batchGet(mediaItemIds) {
+        let url = `${GooglePhotos.APIs.mediaItems}:batchGet?`;
+
+        mediaItemIds.forEach(mediaItemId => {
+            url += `mediaItemIds=${mediaItemId}&`;
+        });
+
+        const result = await this._getRequest(url);
+        return this._filterMediaItemResultsByStatus(result.mediaItemResults);
+    }
+
+    _filterMediaItemResultsByStatus(mediaItemResults) {
+        const mediaItems = mediaItemResults
+            .filter(result => !result.status)
+            .map(result => result.mediaItem);
+
+        if (mediaItems.length !== mediaItemResults.length) {
+            const numOfErrorStatus = mediaItemResults.filter(result => !!result.status);
+            console.error(`There are ${numOfErrorStatus} items with error`);
+        }
+
+        return mediaItems;
     }
 
     async listMediaItems(pageSize = 10, nextPageToken = null) {
@@ -70,26 +119,56 @@ class GooglePhotos {
         return await storage.set(mediaItem.id, data);
     }
 
+    async probeUrlForContentLength(mediaItem) {
+        const authToken = await this.authService.getToken();
+        const headers = this._headers(authToken.access_token);
 
+        return new Promise((resolve, reject) => {
+            const url = this._createDownloadUrl(mediaItem);
+            const probeReq = request(url, { headers });
 
-    // async listMediaItems(pageSize = 10, nextPageToken = null ) {
-    //     const token = await this.googleOAuth2.getToken();
-    //     const headers = GooglePhotosApi.headers(token.res.access_token);
-    //
-    //     const url = GooglePhotosApi.APIs.mediaItems + '?' +
-    //         `${!!pageSize ? 'pageSize=' + pageSize : ''}` +
-    //         `${!!nextPageToken ? 'pageToken=' + nextPageToken : ''}`;
-    //
-    //     console.log(url);
-    //
-    //     return new Promise((resolve, reject) => {
-    //         request(url, { headers }, (err, resp, body) => {
-    //             if (err) console.error(err);
-    //             const mediaItems = JSON.parse(body);
-    //             resolve(mediaItems);
-    //         });
-    //     });
-    // }
+            probeReq.on('response', (res) => {
+                res.on('data', function (data) {
+                    resolve({
+                        statusCode: res.statusCode,
+                        headers: res.headers
+                    });
+                    probeReq.abort();
+                });
+            });
+
+            probeReq.on('error', (err) => {
+                console.error(err);
+                probeReq.abort();
+                reject(err);
+            });
+        });
+    }
+
+    async createDownloadStream(mediaItem) {
+        const authToken = await this.authService.getToken();
+        const headers = this._headers(authToken.access_token);
+
+        const url = this._createDownloadUrl(mediaItem);
+
+        return request(url, { headers });
+    }
+
+    _createDownloadUrl(mediaItem) {
+        let downloadParams = "";
+
+        if (mediaItem.mediaMetadata.video) {
+            downloadParams += "dv";
+        }
+
+        if (mediaItem.mediaMetadata.photo) {
+            const { width, height } = mediaItem.mediaMetadata;
+            downloadParams += `w${width}-h${height}`;
+        }
+
+        return `${mediaItem.baseUrl}=${downloadParams}`;
+    }
+
 
     // async getSingleMediaItem(mediaItem) {
     //     // const token = await this.googleOAuth2.getToken();
