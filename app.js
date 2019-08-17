@@ -1,8 +1,7 @@
 const request = require('request');
 const mkdirp = require('mkdirp');
 const fs = require('fs');
-const th2 = require('through2');
-const path = require('path');
+const args = require('command-line-args');
 
 const Store = require('./my-key-value-store');
 const { AuthStorage, AuthService } = require('./google-auth');
@@ -183,6 +182,17 @@ async function main() {
     // scheduler.createJobs();
 
     console.log('auth service ===');
+
+    const options = args([
+        { name: 'job', type: String },
+        { name: 'params', type: String, multiple: true }
+    ]);
+
+    console.log(options);
+
+    if (options.job) {
+        scheduler.trigger(options.job, options.params);
+    }
 
     // const keys = store.getKeySet();
     // console.log(keys.size);

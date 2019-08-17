@@ -25,9 +25,15 @@ class Downloader {
         const mediaItems = [];
 
         while (mediaItems.length < hintItemsToDownload) {
-            let mediaItemsResponse = await this.googlePhotos.listMediaItems(this.pageSize, nextPageToken);
+            const numOfItems = Math.min(hintItemsToDownload, this.pageSize);
+            let mediaItemsResponse = await this.googlePhotos.listMediaItems(numOfItems, nextPageToken);
 
-            mediaItemsResponse.mediaItems.forEach(mediaItem => {
+            const mediaItemsInResponse = mediaItemsResponse.mediaItems || [];
+            if (mediaItemsInResponse.length === 0 && mediaItemsResponse.nextPageToken) {
+                console.error('No mediaItems found in response. Continuing to next page.');
+            }
+
+            mediaItemsInResponse.forEach(mediaItem => {
                 mediaItems.push(mediaItem);
             });
 

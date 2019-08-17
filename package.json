@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "agenda": "2.0.2",
+    "command-line-args": "^5.1.1",
     "express": "4.17.1",
     "get-port": "5.0.0",
     "googleapis": "40.0.0",

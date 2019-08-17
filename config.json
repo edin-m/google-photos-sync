@@ -1,7 +1,7 @@
 {
   "mediaItemsRefresh": {
     "jobCron": "0 * * * *",
-    "numberOfItems": 100
+    "numberOfItems": 1000
   },
   "contentLengthRefresh": {
     "jobCron": "0 15 * * *",
