@@ -1,6 +1,8 @@
 # Google Photos Sync
 Sync Google Photos on a local disk.
 
+# THIS IS A READ-ONLY / DOWNLOAD SYNC -- no sync upstream
+
 # Set up
 
 1. Get credentials.json from google console and put them into the secrets folder
@@ -8,6 +10,8 @@ Sync Google Photos on a local disk.
 3. Run `node app`
 
 # How it works
+
+
 
 It has 3 cron jobs which are:
 - getting and caching google photo metadata (4x a day)

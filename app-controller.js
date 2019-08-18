@@ -3,27 +3,27 @@ const config = require('./config.json');
 const util = require('./util');
 const { log } = require('./log');
 
+const __referenceStoredItem = {
+    mediaItem: {},
+    appData: {
+        mediaItemGet: {
+            at: Date.now()
+        },
+        probe: {
+            at: Date.now(),
+            contentLength: 123
+        },
+        download: {
+            at: Date.now(),
+            contentLength: 123
+        }
+    }
+};
+
 class AppController {
     constructor(storage, googlePhotos) {
         this.storage = storage;
         this.googlePhotos = googlePhotos;
-
-        const storedItem = {
-            mediaItem: {},
-            appData: {
-                mediaItemGet: {
-                    at: Date.now()
-                },
-                probe: {
-                    at: Date.now(),
-                    contentLength: 123
-                },
-                download: {
-                    at: Date.now(),
-                    contentLength: 123
-                }
-            }
-        };
     }
 
     onMediaItemsDownloaded(mediaItems) {
