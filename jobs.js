@@ -70,6 +70,7 @@ class Scheduler {
     }
 
     _mediaItemRefreshJobFn(numOfItems) {
+        log.info(this, '');
         log.info(this, '_mediaItemRefreshJobFn', numOfItems);
 
         this.downloader.downloadMediaItems(numOfItems).then(mediaItems => {
@@ -78,6 +79,7 @@ class Scheduler {
     }
 
     _probeMediaItemRefreshFn(renewIfOlderThanDays, numberOfItems) {
+        log.info(this, '');
         log.info(this, '_probeMediaItemRefreshFn', renewIfOlderThanDays, numberOfItems);
 
         const mediaItemIdsToProbe = this.appController.findMediaItemIdsToProbe(
@@ -91,6 +93,7 @@ class Scheduler {
     }
 
     _downloadMediaItemFilesJob(numberOfItems) {
+        log.info(this, '');
         log.info(this, '_downloadMediaItemFilesJob', numberOfItems);
 
         const mediaItemIdsToDownload = this.appController.findMediaItemsToDownload(numberOfItems);

@@ -1,6 +1,7 @@
 {
+  "photosPath": 'google/photos',
   "mediaItemsRefresh": {
-    "jobCron": "*/30 * * * *",
+    "jobCron": "0 */6 * * *",
     "numberOfItems": 1000
   },
   "probeMediaItemsRefresh": {

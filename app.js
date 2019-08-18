@@ -3,6 +3,8 @@ const mkdirp = require('mkdirp');
 const fs = require('fs');
 const args = require('command-line-args');
 
+const config = require('./config.json');
+
 const Store = require('./my-key-value-store');
 const { AuthStorage, AuthService } = require('./google-auth');
 const { GooglePhotos } = require('./google-photos');
@@ -19,7 +21,7 @@ async function main() {
     const authStorage = new AuthStorage();
     const authService = new AuthService(authStorage);
     const googlePhotos = new GooglePhotos(storage, authService);
-    const downloadPath = 'google/photos';
+    const downloadPath = config.photosPath;
     mkdirp(downloadPath);
     const downloader = new Downloader(storage, googlePhotos, downloadPath);
     const appController = new AppController(storage, googlePhotos);
