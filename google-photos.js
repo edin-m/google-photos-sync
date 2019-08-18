@@ -166,17 +166,6 @@ class GooglePhotos {
 
         return `${mediaItem.baseUrl}=${downloadParams}`;
     }
-
-
-    // async getSingleMediaItem(mediaItem) {
-    //     // const token = await this.googleOAuth2.getToken();
-    //     // const headers = GooglePhotosApi.headers(token.res.access_token);
-    //
-    //     const { width, height } = mediaItem.mediaMetadata;
-    //
-    //     const url = `${mediaItem.baseUrl}=w${width}-h${height}`;
-    //     request(url).pipe(fs.createWriteStream(`./photos/${mediaItem.filename}`));
-    // }
 }
 GooglePhotos.APIs = {
     mediaItems: 'https://photoslibrary.googleapis.com/v1/mediaItems',
