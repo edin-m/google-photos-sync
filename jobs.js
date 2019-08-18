@@ -18,6 +18,10 @@ class Scheduler {
             probeMediaItemRefresh: {
                 fn: this._probeMediaItemRefreshFn,
                 params: [Number, Number]
+            },
+            downloadMediaItemFile: {
+                fn: this._downloadMediaItemFilesJob,
+                params: [Number]
             }
         }
     }
@@ -67,14 +71,25 @@ class Scheduler {
 
     _probeMediaItemRefreshFn(renewIfOlderThanDays, numberOfItems) {
         log.info(this, '_probeMediaItemRefreshFn', renewIfOlderThanDays, numberOfItems);
-        const mediaItemsToProbe = this.appController.findMediaItemIdsToProbe(
+
+        const mediaItemIdsToProbe = this.appController.findMediaItemIdsToProbe(
             renewIfOlderThanDays, numberOfItems
         );
+        log.info(this, '_probeMediaItemRefreshFn mediaItemsToProbe', mediaItemIdsToProbe.length);
 
-        log.info(this, '_probeMediaItemRefreshFn mediaItemsToProbe', mediaItemsToProbe.length);
-        this.downloader.probeMediaItems(mediaItemsToProbe).then(contentLengthMap => {
+        this.downloader.probeMediaItems(mediaItemIdsToProbe).then(contentLengthMap => {
             this.appController.onProbedMediaItems(contentLengthMap);
         }).catch(err => console.error(err));
+    }
+
+    _downloadMediaItemFilesJob(numberOfItems) {
+        log.info(this, '_downloadMediaItemFilesJob', numberOfItems);
+
+        const mediaItemIdsToDownload = this.appController.findMediaItemsToDownload(numberOfItems);
+        log.info(this, '_downloadMediaItemFilesJob found', mediaItemIdsToDownload.length);
+
+        this.downloader.downloadMediaItemFiles(mediaItemIdsToDownload)
+            .catch(err => console.error(err));
     }
 
 }

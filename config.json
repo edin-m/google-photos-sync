@@ -11,5 +11,8 @@
   "mediaItemsDownload": {
     "jobCron": "0 * * * *",
     "numberOfItems": 100
+  },
+  "downloader": {
+    "maxDownloadFilesAtOnce": 4
   }
 }

@@ -27,7 +27,8 @@ class AppController {
     }
 
     onMediaItemsDownloaded(mediaItems) {
-        console.log('onMediaItemsDownloaded', mediaItems.length);
+        log.info(this, 'onMediaItemsDownloaded', mediaItems.length);
+
         mediaItems.forEach(mediaItem => {
             const stored = this.storage.get(mediaItem.id);
             const appData = this._createAppData(stored);
@@ -80,24 +81,26 @@ class AppController {
 
         const keys = Object.keys(contentLengthMap);
         const storedItems = keys.map(key => {
-            const item = this.storage.get(key);
-
-            if (!item.appData.probe) {
-                item.appData.probe = { at: 0, contentLength: 0 }
-            }
-
-            item.appData.probe.at = Date.now();
-            item.appData.probe.contentLength = contentLengthMap[key];
-
-            return item;
+            const storedItem = this.storage.get(key);
+            return this._setupProbeAppData(storedItem, contentLengthMap[key]);
         });
 
         const forDownload = this._chooseFilesForDownload(storedItems, contentLengthMap);
         log.verbose(this, 'onProbedMediaItems for download', forDownload.length);
 
         forDownload.forEach(storedItem => storedItem.appData.download = null);
-
         storedItems.forEach(storedItem => this.storage.set(storedItem.mediaItem.id, storedItem));
+    }
+
+    _setupProbeAppData(storedItem, contentLength) {
+        if (!storedItem.appData.probe) {
+            storedItem.appData.probe = { at: 0, contentLength: 0 };
+        }
+
+        storedItem.appData.probe.at = Date.now();
+        storedItem.appData.probe.contentLength = Number(contentLength);
+
+        return storedItem;
     }
 
     _chooseFilesForDownload(storedItems) {
@@ -113,16 +116,30 @@ class AppController {
         });
     }
 
-    findMediaItemsToDownload() {
+    findMediaItemsToDownload(numberOfItems) {
+        const storedItemsToDownload = this.storage.getByFilter(
+            this._createDownloadFilterFn
+        ).slice(0, numberOfItems);
 
+        log.verbose(this, 'findMediaItemsToDownload', storedItemsToDownload.length);
+
+        return storedItemsToDownload
+            .filter(storedItem => storedItem.mediaItem)
+            .map(storedItem => storedItem.mediaItem.id);
     }
 
     _createDownloadFilterFn() {
+        return value => {
+            let download = true;
 
-    }
+            if (value.appData && value.appData.download && value.appData.probe) {
+                if (value.appData.probe.contentLength === value.appData.download.contentLength) {
+                    download = false;
+                }
+            }
 
-    _refreshMediaItems(mediaItems) {
-
+            return download;
+        };
     }
 }
 

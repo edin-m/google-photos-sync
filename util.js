@@ -12,8 +12,8 @@ function createGroups(items, groupSize) {
         const startIdx = i * groupSize;
         const endIdx = i * groupSize + groupSize;
 
-        const sliceIds = items.slice(startIdx, endIdx);
-        groups.push(sliceIds);
+        const subItems = items.slice(startIdx, endIdx);
+        groups.push(subItems);
     }
 
     return groups;

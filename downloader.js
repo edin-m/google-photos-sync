@@ -4,6 +4,9 @@ const path = require('path');
 const mkdirp = require('mkdirp');
 
 const { log } = require('./log');
+const util = require('./util');
+
+const config = require('./config.json');
 
 class Downloader {
     constructor(storage, googlePhotos, downloadPath) {
@@ -48,10 +51,37 @@ class Downloader {
     async downloadMediaItemFiles(mediaItemIds) {
         const mediaItems = await this.googlePhotos.batchGet(mediaItemIds);
 
-        mediaItems.forEach(async (mediaItem) => {
+        const groups = util.createGroups(mediaItems, config.downloader.maxDownloadFilesAtOnce);
+        console.log(groups.length);
+
+        for (let group of groups) {
+            await Promise.all(this._downloadMediaItemFiles(group));
+        }
+    }
+
+    _downloadMediaItemFiles(mediaItems) {
+        return mediaItems.map(async (mediaItem) => {
             const where = path.join(this.downloadPath, mediaItem.filename);
             const stream = await this.googlePhotos.createDownloadStream(mediaItem);
-            stream.pipe(fs.createWriteStream(where));
+            return new Promise((resolve, reject) => {
+                this.googlePhotos.createDownloadStream(mediaItem);
+                stream.pipe(fs.createWriteStream(where)
+                    .on('close', () => {
+                        resolve();
+
+                        log.verbose(this, 'downloadMediaItemFiles finished writing');
+                        const stat = fs.statSync(where);
+                        const download = {at: Date.now(), contentLength: stat.size};
+
+                        const storedItem = this.storage.get(mediaItem.id);
+                        storedItem.appData.download = download;
+                        this.storage.set(mediaItem.id, storedItem);
+                    }))
+                    .on('error', (err) => {
+                        log.error(this, 'error downloading a file', err);
+                        resolve();
+                    });
+            });
         });
     }
 
