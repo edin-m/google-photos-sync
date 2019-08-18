@@ -17,11 +17,11 @@ async function main() {
 
     const authStorage = new AuthStorage();
     const authService = new AuthService(authStorage);
-    const googlePhotos = new GooglePhotos(authService);
+    const googlePhotos = new GooglePhotos(storage, authService);
     const downloadPath = 'google/photos';
     mkdirp(downloadPath);
     const downloader = new Downloader(storage, googlePhotos, downloadPath);
-    const appController = new AppController(storage);
+    const appController = new AppController(storage, googlePhotos);
     const scheduler = new Scheduler(downloader, appController);
 
 
@@ -188,10 +188,8 @@ async function main() {
         { name: 'params', type: String, multiple: true }
     ]);
 
-    console.log(options);
-
     if (options.job) {
-        scheduler.trigger(options.job, options.params);
+        scheduler.triggerNow(options.job, options.params);
     }
 
     // const keys = store.getKeySet();

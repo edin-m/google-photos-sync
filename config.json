@@ -3,9 +3,10 @@
     "jobCron": "0 * * * *",
     "numberOfItems": 1000
   },
-  "contentLengthRefresh": {
+  "probeMediaItemsRefresh": {
     "jobCron": "0 15 * * *",
-    "numberOfItems": 100
+    "numberOfItems": 100,
+    "renewIfOlderThanDays": 7
   },
   "mediaItemsDownload": {
     "jobCron": "0 * * * *",

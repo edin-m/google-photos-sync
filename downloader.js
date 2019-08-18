@@ -53,6 +53,27 @@ class Downloader {
         });
     }
 
+    async probeMediaItems(mediaItemIds) {
+        const mediaItems = await this.googlePhotos.batchGet(mediaItemIds);
+
+        const contentLengthMap = {};
+
+        mediaItems.forEach(async (mediaItem) => {
+            const { statusCode, headers } = await this.googlePhotos.probeUrlForContentLength(mediaItem);
+
+            if (statusCode >= 200 && statusCode < 300) {
+                contentLengthMap[mediaItem.id] = {
+                    mediaItem,
+                    contentLength: headers['content-length']
+                };
+            } else {
+                console.error(`${mediaItem.id} status code is ${statusCode}`);
+            }
+        });
+
+        return contentLengthMap;
+    }
+
     // async downloadAndStoreAllMediaItems() {
     //     let nextPageToken = null;
     //     let shouldContinue = true;

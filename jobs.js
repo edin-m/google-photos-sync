@@ -12,15 +12,26 @@ class Scheduler {
             mediaItemRefresh: {
                 fn: this._mediaItemRefreshJobFn,
                 params: [Number]
+            },
+            probeMediaItemRefresh: {
+                fn: this._mediaItemRefreshJobFn,
+                params: []
             }
         }
     }
 
     createJobs() {
-        this.jobs.push(this._createMediaItemRefreshJob(config.mediaItemsRefresh.numberOfItems));
+        this.jobs.push(this._createMediaItemRefreshJob());
     }
 
-    trigger(name, params = []) {
+    _createMediaItemRefreshJob() {
+        return schedule.scheduleJob(
+            config.mediaItemsRefresh.jobCron,
+            this._mediaItemRefreshJobFn.bind(this, config.mediaItemsRefresh.numberOfItems)
+        );
+    }
+
+    triggerNow(name, params = []) {
         const job = this.availableJobs[name];
 
         if (!job) {
@@ -31,21 +42,21 @@ class Scheduler {
             throw new Error(`Not all params have been provided, required ${job.params.length}`);
         }
 
-
         const converted = [...params].slice(0, job.params.length).map((item, idx) => job.params[idx](item));
         return job.fn.apply(this, converted);
-    }
-
-    _createMediaItemRefreshJob(numOfItems) {
-        return schedule.scheduleJob(
-            config.mediaItemsRefresh.jobCron,
-            this._mediaItemRefreshJobFn.bind(this, numOfItems)
-        );
     }
 
     _mediaItemRefreshJobFn(numOfItems) {
         this.downloader.downloadMediaItems(numOfItems).then(mediaItems => {
             this.appController.onMediaItemsDownloaded(mediaItems);
+        });
+    }
+
+    _probeMediaItemRefreshFn() {
+        const mediaItemsToProbe = this.appController.findMediaItemIdsToProbe();
+
+        this.downloader.probeMediaItems(mediaItemsToProbe).then(contentLengthMap => {
+            this.appController.onProbedMediaItems(contentLengthMap);
         });
     }
 

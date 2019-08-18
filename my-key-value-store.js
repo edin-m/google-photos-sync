@@ -34,6 +34,14 @@ function Store(filePath, opts) {
         return new Set(Object.keys(this.data));
     };
 
+    this.getByFilter = function(filterFn) {
+        const selected = Object.keys(this.data)
+            .map(k => this.data[key])
+            .filter(v => filterFn(v));
+
+        return JSON.parse(JSON.stringify(selected));
+    };
+
     this._writeFile = () => {
         if (!this.savingInProgress) {
             const jsonData = JSON.stringify(this.data, null, 2);

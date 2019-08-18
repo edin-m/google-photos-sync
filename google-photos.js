@@ -4,7 +4,8 @@ const request = require('request');
 
 class GooglePhotos {
 
-    constructor(authService) {
+    constructor(storage, authService) {
+        this.storage = storage;
         this.authService = authService;
     }
 
@@ -25,24 +26,25 @@ class GooglePhotos {
     }
 
     async batchGet(mediaItemIds) {
-        const BATCH_GET_LIMIT = 49;
-        return this._batchGetSpliced(mediaItemIds, BATCH_GET_LIMIT);
-    }
+        const limit = GooglePhotos.APIs.BATCH_GET_LIMIT;
+        const groups = Math.ceil(mediaItemIds.length / limit);
 
-    async _batchGetSpliced(mediaItemIds, BATCH_GET_LIMIT) {
-        // TODO: remove this, use only dumb version; split to groups somewhere else
-        const groups = Math.ceil(mediaItemIds.length / BATCH_GET_LIMIT);
-        const results = [];
+        const groupMediaItemIds = [];
 
         for (let i = 0; i < groups; i++) {
-            const startIdx = i * BATCH_GET_LIMIT;
-            const endIdx = i * BATCH_GET_LIMIT + BATCH_GET_LIMIT;
+            const startIdx = i * limit;
+            const endIdx = i * limit + limit;
 
             const sliceIds = mediaItemIds.slice(startIdx, endIdx);
+            groupMediaItemIds.push(sliceIds);
+        }
 
+        const results = [];
+
+        groupMediaItemIds.forEach(async (sliceIds) => {
             const batch = await this._batchGet(sliceIds);
             batch.forEach(item => results.push(item));
-        }
+        });
 
         return results;
     }
@@ -110,13 +112,13 @@ class GooglePhotos {
         };
     }
 
-    async storeMediaItem(storage, mediaItem, appData = null) {
+    storeMediaItem(mediaItem, appData = null) {
         const data = {
             mediaItem,
             appData
         };
 
-        return await storage.set(mediaItem.id, data);
+        return this.storage.set(mediaItem.id, data);
     }
 
     async probeUrlForContentLength(mediaItem) {
@@ -181,7 +183,8 @@ class GooglePhotos {
     // }
 }
 GooglePhotos.APIs = {
-    mediaItems: 'https://photoslibrary.googleapis.com/v1/mediaItems'
+    mediaItems: 'https://photoslibrary.googleapis.com/v1/mediaItems',
+    BATCH_GET_LIMIT: 49
 };
 
 module.exports = {

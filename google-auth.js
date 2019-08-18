@@ -225,6 +225,8 @@ class AuthStorage {
 
         const filePath = this._getTokenFilePath();
         fs.writeFileSync(filePath, JSON.stringify(storedToken, null, 4));
+
+        return storedToken;
     }
 
     loadToken() {
@@ -273,11 +275,11 @@ class AuthService {
     }
 
     async getToken() {
-        if (!this.cachedToken) {
-            this.cachedToken = await this.authenticate(this.config.requiredScopes);
+        if (!this.cachedToken || this._isTokenExpired(this.cachedToken)) {
+            await this.authenticate(this.config.requiredScopes);
         }
 
-        return this.cachedToken;
+        return this.cachedToken.token;
     }
 
     async authenticate(scopes = []) {
@@ -291,11 +293,11 @@ class AuthService {
         let authToken = storedToken.token;
 
         if (this._isTokenExpired(storedToken)) {
-            console.log('Token is expired. Renewing.');
+            console.log('expired');
             authToken = this._refreshToken(authToken);
         }
 
-        this.cachedToken = authToken;
+        this.cachedToken = this.authStorage.loadToken();
         return authToken;
     }
 
@@ -326,6 +328,7 @@ class AuthService {
 
                 const tokenRequest = this._createAuthorizationTokenRequest(code, this.config.cbUrl);
                 const authToken = await this._getToken(tokenRequest);
+                console.log('auth token ', authToken.access_token);
                 this.authStorage.storeToken(authToken);
                 resolve(authToken);
 
@@ -382,7 +385,6 @@ class AuthService {
         const tokenExpiresAt = moment.utc(storedToken.tokenCreatedAt).add(expiresInInSec, 'seconds');
 
         const diff = tokenExpiresAt.diff(moment.utc(), 'seconds');
-        console.log(moment.utc(), tokenExpiresAt, diff);
         return diff <= 10; // sec
     }
 
@@ -396,8 +398,10 @@ class AuthService {
 
         const { access_token, expires_in, token_type } = refreshToken;
         authToken.access_token = access_token;
-        authToken.expires_in = expires_in;
-        authToken.token_type = token_type;
+        refreshToken.expires_in = expires_in;
+        refreshToken.token_type = token_type;
+
+        console.log('got refresh token', refreshToken.access_token);
 
         this.authStorage.storeToken(authToken);
 
