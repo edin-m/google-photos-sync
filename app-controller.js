@@ -34,6 +34,8 @@ class AppController {
             const appData = this._createAppData(stored);
             this.googlePhotos.storeMediaItem(mediaItem, appData);
         });
+
+        log.info(this, 'onMediaItemsDownloaded total media items', this.storage.getByFilter(item => item.mediaItem).length);
     }
 
     _createAppData(stored) {
@@ -77,7 +79,7 @@ class AppController {
     }
 
     onProbedMediaItems(contentLengthMap) {
-        log.verbose(this, 'onProbedMediaItems', Object.keys(contentLengthMap).length);
+        log.info(this, 'onProbedMediaItems', Object.keys(contentLengthMap).length);
 
         const keys = Object.keys(contentLengthMap);
         const storedItems = keys.map(key => {
@@ -117,11 +119,13 @@ class AppController {
     }
 
     findMediaItemsToDownload(numberOfItems) {
+        log.verbose(this, 'findMediaItemsToDownload', numberOfItems.length);
+
         const storedItemsToDownload = this.storage.getByFilter(
             this._createDownloadFilterFn
         ).slice(0, numberOfItems);
 
-        log.verbose(this, 'findMediaItemsToDownload', storedItemsToDownload.length);
+        log.verbose(this, 'findMediaItemsToDownload stored items', storedItemsToDownload.length);
 
         return storedItemsToDownload
             .filter(storedItem => storedItem.mediaItem)

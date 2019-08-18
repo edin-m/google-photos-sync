@@ -29,6 +29,7 @@ class Scheduler {
     createJobs() {
         this.jobs.push(this._createMediaItemRefreshJob());
         this.jobs.push(this._createProbeMediaItemRefreshJob());
+        this.jobs.push(this._createDownloadMediaItemFilesJob());
     }
 
     _createMediaItemRefreshJob() {
@@ -43,6 +44,13 @@ class Scheduler {
         return schedule.scheduleJob(
             config.probeMediaItemsRefresh.jobCron,
             this._probeMediaItemRefreshFn.bind(this, renewIfOlderThanDays, numberOfItems)
+        );
+    }
+
+    _createDownloadMediaItemFilesJob() {
+        return schedule.scheduleJob(
+            config.mediaItemsDownload.jobCron,
+            this._downloadMediaItemFilesJob.bind(this, config.mediaItemsDownload.numberOfItems)
         );
     }
 

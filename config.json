@@ -1,15 +1,15 @@
 {
   "mediaItemsRefresh": {
-    "jobCron": "0 * * * *",
+    "jobCron": "*/30 * * * *",
     "numberOfItems": 1000
   },
   "probeMediaItemsRefresh": {
-    "jobCron": "0 15 * * *",
-    "numberOfItems": 100,
+    "jobCron": "10 * * * *",
+    "numberOfItems": 200,
     "renewIfOlderThanDays": 7
   },
   "mediaItemsDownload": {
-    "jobCron": "0 * * * *",
+    "jobCron": "20 * * * *",
     "numberOfItems": 100
   },
   "downloader": {
