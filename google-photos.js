@@ -2,6 +2,9 @@ const { URL } = require('url');
 
 const request = require('request');
 
+const { createGroups } = require('./util');
+const { log } = require('./log');
+
 class GooglePhotos {
 
     constructor(storage, authService) {
@@ -26,24 +29,17 @@ class GooglePhotos {
     }
 
     async batchGet(mediaItemIds) {
-        const limit = GooglePhotos.APIs.BATCH_GET_LIMIT;
-        const groups = Math.ceil(mediaItemIds.length / limit);
-
-        const groupMediaItemIds = [];
-
-        for (let i = 0; i < groups; i++) {
-            const startIdx = i * limit;
-            const endIdx = i * limit + limit;
-
-            const sliceIds = mediaItemIds.slice(startIdx, endIdx);
-            groupMediaItemIds.push(sliceIds);
-        }
+        const groups = createGroups(mediaItemIds, GooglePhotos.APIs.BATCH_GET_LIMIT);
+        log.verbose(this, 'batchGet split', mediaItemIds.length, 'into', groups.length, 'groups');
 
         const results = [];
 
-        groupMediaItemIds.forEach(async (sliceIds) => {
-            const batch = await this._batchGet(sliceIds);
-            batch.forEach(item => results.push(item));
+        const mediaItemGroups = await Promise.all(groups.map(sliceIds => {
+            return this._batchGet(sliceIds);
+        }));
+
+        mediaItemGroups.forEach(mediaItemGroup => {
+            mediaItemGroup.forEach(mediaItem => results.push(mediaItem));
         });
 
         return results;
@@ -112,7 +108,7 @@ class GooglePhotos {
         };
     }
 
-    storeMediaItem(mediaItem, appData = null) {
+    storeMediaItem(mediaItem, appData = {}) {
         const data = {
             mediaItem,
             appData

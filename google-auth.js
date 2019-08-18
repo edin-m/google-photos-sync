@@ -293,7 +293,6 @@ class AuthService {
         let authToken = storedToken.token;
 
         if (this._isTokenExpired(storedToken)) {
-            console.log('expired');
             authToken = this._refreshToken(authToken);
         }
 
@@ -401,9 +400,7 @@ class AuthService {
         refreshToken.expires_in = expires_in;
         refreshToken.token_type = token_type;
 
-        console.log('got refresh token', refreshToken.access_token);
-
-        this.authStorage.storeToken(authToken);
+        this.cachedToken = this.authStorage.storeToken(authToken);
 
         return authToken;
     }

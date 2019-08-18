@@ -9,6 +9,7 @@ const { GooglePhotos } = require('./google-photos');
 const { Downloader } = require('./downloader');
 const Scheduler = require('./jobs');
 const AppController = require('./app-controller');
+const { log } = require('./log');
 
 async function main() {
     const storage = new Store('secrets/photos.data', {
@@ -26,10 +27,10 @@ async function main() {
 
 
 
-    const mediaItemIds = Array.from(storage.getKeySet()).slice(0, 100);
-
-
-    await downloader.downloadMediaItemFiles(mediaItemIds);
+    // const mediaItemIds = Array.from(storage.getKeySet()).slice(0, 100);
+    //
+    //
+    // await downloader.downloadMediaItemFiles(mediaItemIds);
 
     //
     // const mediaItems = await googlePhotos.batchGet(mediaItemIds);
@@ -185,8 +186,11 @@ async function main() {
 
     const options = args([
         { name: 'job', type: String },
-        { name: 'params', type: String, multiple: true }
+        { name: 'params', type: String, multiple: true },
+        { name: 'verbose', alias: 'v', type: Boolean }
     ]);
+
+    log.setVerbose(options.verbose);
 
     if (options.job) {
         scheduler.triggerNow(options.job, options.params);

@@ -13,7 +13,7 @@ describe('test app controller', () => {
         appController = new AppController();
     });
 
-    it('expect probe filter to return true', () => {
+    it('expect probe filter to return true for big time diff', () => {
         const value = {
             appData: {
                 probe: {
@@ -26,7 +26,7 @@ describe('test app controller', () => {
         expect(result).to.equal(true);
     });
 
-    it('expect probe filter to return false', () => {
+    it('expect probe filter to return false for small time diff', () => {
         const value = {
             appData: {
                 probe: {
@@ -37,5 +37,12 @@ describe('test app controller', () => {
 
         const result = appController._createProbeFilterFn(7)(value);
         expect(result).to.equal(false);
+    });
+
+    it('expect probe filter to equal true when there is no probe field', () => {
+        const value = { appData: {} };
+
+        const result = appController._createProbeFilterFn(7)(value);
+        expect(result).to.equal(true);
     });
 });

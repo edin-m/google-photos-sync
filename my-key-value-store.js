@@ -34,9 +34,9 @@ function Store(filePath, opts) {
         return new Set(Object.keys(this.data));
     };
 
-    this.getByFilter = function(filterFn) {
+    this.getByFilter = function(filterFn, limit) {
         const selected = Object.keys(this.data)
-            .map(k => this.data[key])
+            .map(k => this.data[k])
             .filter(v => filterFn(v));
 
         return JSON.parse(JSON.stringify(selected));
@@ -67,6 +67,9 @@ function Store(filePath, opts) {
             if (err.code === 'ENOENT' || err.name === 'SyntaxError') {
                 this.data = {};
                 return {};
+            }
+            if (err) {
+                console.error(err);
             }
         }
     };

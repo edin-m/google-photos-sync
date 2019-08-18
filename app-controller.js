@@ -1,6 +1,7 @@
 const config = require('./config.json');
 
 const util = require('./util');
+const { log } = require('./log');
 
 class AppController {
     constructor(storage, googlePhotos) {
@@ -47,12 +48,14 @@ class AppController {
         return appData;
     }
 
-    findMediaItemIdsToProbe() {
+    findMediaItemIdsToProbe(renewIfOlderThanDays, numberOfItems) {
+        log.verbose(this, 'findMediaItemIdsToProbe', renewIfOlderThanDays, numberOfItems);
+
         const storedItemsToProbe = this.storage.getByFilter(
-            this._createProbeFilterFn(
-                config.probeMediaItemsRefresh.renewIfOlderThanDays
-            )
-        ).slice(0, config.probeMediaItemsRefresh.numberOfItems);
+            this._createProbeFilterFn(renewIfOlderThanDays)
+        ).slice(0, numberOfItems);
+
+        log.verbose(this, 'storedItemsToProbe', storedItemsToProbe.length);
 
         return storedItemsToProbe
             .filter(item => item.mediaItem)
@@ -61,39 +64,62 @@ class AppController {
 
     _createProbeFilterFn(renewIfOlderThanDays) {
         return value => {
-            let hasAppData = value.appData && value.appData.probe;
-            let probeDataIsOld = false;
+            let probeDataIsOld = true;
 
-            if (hasAppData) {
+            if (value.appData.probe) {
                 const diff = util.diffBetweenTwoDates(value.appData.probe.at, Date.now(), 'days');
-                probeDataIsOld = diff > renewIfOlderThanDays;
+                probeDataIsOld = diff >= renewIfOlderThanDays;
             }
 
-            return hasAppData && probeDataIsOld;
+            return probeDataIsOld;
         };
+    }
+
+    onProbedMediaItems(contentLengthMap) {
+        log.verbose(this, 'onProbedMediaItems', Object.keys(contentLengthMap).length);
+
+        const keys = Object.keys(contentLengthMap);
+        const storedItems = keys.map(key => {
+            const item = this.storage.get(key);
+
+            if (!item.appData.probe) {
+                item.appData.probe = { at: 0, contentLength: 0 }
+            }
+
+            item.appData.probe.at = Date.now();
+            item.appData.probe.contentLength = contentLengthMap[key];
+
+            return item;
+        });
+
+        const forDownload = this._chooseFilesForDownload(storedItems, contentLengthMap);
+        log.verbose(this, 'onProbedMediaItems for download', forDownload.length);
+
+        forDownload.forEach(storedItem => storedItem.appData.download = null);
+
+        storedItems.forEach(storedItem => this.storage.set(storedItem.mediaItem.id, storedItem));
+    }
+
+    _chooseFilesForDownload(storedItems) {
+        return storedItems.filter(storedItem => {
+            if (storedItem.appData.probe && storedItem.appData.download) {
+                const pcl = storedItem.appData.probe.contentLength;
+                const dcl = storedItem.appData.download.contentLength;
+
+                return pcl !== dcl;
+            }
+
+            return false;
+        });
     }
 
     findMediaItemsToDownload() {
 
     }
 
-    onProbedMediaItems(contentLengthMap) {
+    _createDownloadFilterFn() {
 
     }
-
-    // _updateMediaItem(stored, mediaItem) {
-    //     const updatedItem = mediaItem;
-    //
-    //     if (stored) {
-    //         const { mediaItem: storedMediaItem, appData } = stored;
-    //
-    //         if (storedMediaItem && appData) {
-    //
-    //         }
-    //     }
-    //
-    //     return updatedItem;
-    // }
 
     _refreshMediaItems(mediaItems) {
 

@@ -3,6 +3,8 @@ const path = require('path');
 
 const mkdirp = require('mkdirp');
 
+const { log } = require('./log');
+
 class Downloader {
     constructor(storage, googlePhotos, downloadPath) {
         this.storage = storage;
@@ -58,18 +60,15 @@ class Downloader {
 
         const contentLengthMap = {};
 
-        mediaItems.forEach(async (mediaItem) => {
+        await Promise.all(mediaItems.map(async (mediaItem) => {
             const { statusCode, headers } = await this.googlePhotos.probeUrlForContentLength(mediaItem);
 
             if (statusCode >= 200 && statusCode < 300) {
-                contentLengthMap[mediaItem.id] = {
-                    mediaItem,
-                    contentLength: headers['content-length']
-                };
+                contentLengthMap[mediaItem.id] = headers['content-length'];
             } else {
-                console.error(`${mediaItem.id} status code is ${statusCode}`);
+                log.error(this, `${mediaItem.id} status code is ${statusCode}`);
             }
-        });
+        }));
 
         return contentLengthMap;
     }

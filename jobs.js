@@ -2,6 +2,8 @@ const schedule = require('node-schedule');
 
 const config = require('./config.json');
 
+const { log } = require('./log');
+
 class Scheduler {
     constructor(downloader, appController) {
         this.downloader = downloader;
@@ -14,20 +16,29 @@ class Scheduler {
                 params: [Number]
             },
             probeMediaItemRefresh: {
-                fn: this._mediaItemRefreshJobFn,
-                params: []
+                fn: this._probeMediaItemRefreshFn,
+                params: [Number, Number]
             }
         }
     }
 
     createJobs() {
         this.jobs.push(this._createMediaItemRefreshJob());
+        this.jobs.push(this._createProbeMediaItemRefreshJob());
     }
 
     _createMediaItemRefreshJob() {
         return schedule.scheduleJob(
             config.mediaItemsRefresh.jobCron,
             this._mediaItemRefreshJobFn.bind(this, config.mediaItemsRefresh.numberOfItems)
+        );
+    }
+
+    _createProbeMediaItemRefreshJob() {
+        const { renewIfOlderThanDays, numberOfItems } = config.probeMediaItemsRefresh;
+        return schedule.scheduleJob(
+            config.probeMediaItemsRefresh.jobCron,
+            this._probeMediaItemRefreshFn.bind(this, renewIfOlderThanDays, numberOfItems)
         );
     }
 
@@ -47,17 +58,23 @@ class Scheduler {
     }
 
     _mediaItemRefreshJobFn(numOfItems) {
+        log.info(this, '_mediaItemRefreshJobFn', numOfItems);
+
         this.downloader.downloadMediaItems(numOfItems).then(mediaItems => {
             this.appController.onMediaItemsDownloaded(mediaItems);
-        });
+        }).catch(err => console.error(err));
     }
 
-    _probeMediaItemRefreshFn() {
-        const mediaItemsToProbe = this.appController.findMediaItemIdsToProbe();
+    _probeMediaItemRefreshFn(renewIfOlderThanDays, numberOfItems) {
+        log.info(this, '_probeMediaItemRefreshFn', renewIfOlderThanDays, numberOfItems);
+        const mediaItemsToProbe = this.appController.findMediaItemIdsToProbe(
+            renewIfOlderThanDays, numberOfItems
+        );
 
+        log.info(this, '_probeMediaItemRefreshFn mediaItemsToProbe', mediaItemsToProbe.length);
         this.downloader.probeMediaItems(mediaItemsToProbe).then(contentLengthMap => {
             this.appController.onProbedMediaItems(contentLengthMap);
-        });
+        }).catch(err => console.error(err));
     }
 
 }
