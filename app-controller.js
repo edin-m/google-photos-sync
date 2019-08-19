@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const lo = require('lodash');
 
 const config = require('./config.json');
 
@@ -126,7 +127,7 @@ class AppController {
         log.verbose(this, 'findMediaItemsToDownload', numberOfItems);
 
         const storedItemsToDownload = this.storage.getByFilter(
-            this._createDownloadFilterFn()
+            this._createDownloadFilterFn(), numberOfItems
         ).slice(0, numberOfItems);
 
         log.verbose(this, 'findMediaItemsToDownload stored items', storedItemsToDownload.length);
@@ -142,19 +143,64 @@ class AppController {
             let isFileExists = false;
             let isFileSizeSame = false;
 
-            if (value.appData && value.appData.download && value.appData.probe && value.mediaItem) {
-                isContentLengthSame = value.appData.probe.contentLength === value.appData.download.contentLength;
+            if (value.mediaItem) {
+                if (value.appData.download && value.appData.probe) {
+                    isContentLengthSame = value.appData.probe.contentLength === value.appData.download.contentLength;
+                }
 
-                const filepath = path.join(this.downloadPath, value.mediaItem.filename);
+                const filename = value.altFilename || value.mediaItem.filename;
+                const filepath = path.join(this.downloadPath, filename);
                 isFileExists = fs.existsSync(filepath);
 
                 if (isFileExists) {
-                    isFileSizeSame = fs.statSync(filepath).size === value.appData.probe.contentLength;
+                    const contentLength = lo.get(value.appData, 'probe.contentLength') || lo.get(value.appData, 'donwload.contentLength');
+                    isFileSizeSame = fs.statSync(filepath).size === contentLength;
                 }
             }
 
-            return !isContentLengthSame || !isFileExists || !isFileSizeSame;
+            return !(isContentLengthSame && isFileExists && isFileSizeSame);
         };
+    }
+
+    fixFilenamesForDuplicates() {
+        const duplicates = this._getStoredItemsWithDuplicateFilenames();
+
+        log.info(this, 'fixFilenamesForDuplicates found duplicates', Object.keys(duplicates).length);
+
+        for (let filename in duplicates) {
+            duplicates[filename].storedItems.forEach((storedItem, idx) => {
+                storedItem.altFilename = `${idx}_${filename}`;
+
+                this.storage.set(storedItem.mediaItem.id, storedItem);
+            });
+        }
+    }
+
+    _getStoredItemsWithDuplicateFilenames() {
+        const counts = {
+            // 'filename': { count: 0, ids: [] }
+        };
+
+        this._getAllMediaItems()
+            .filter(storedItem => !storedItem.altFilename)
+            .map(storedItem => {
+                const count = counts[storedItem.mediaItem.filename] || { count: 0, storedItems: [] };
+                count.count++;
+                count.storedItems.push(storedItem);
+
+                counts[storedItem.mediaItem.filename] = count;
+            });
+
+        const duplicates = {};
+        Object.keys(counts)
+            .filter(filename => counts[filename].count > 1)
+            .forEach(filename => duplicates[filename] = counts[filename]);
+
+        return duplicates;
+    }
+
+    _getAllMediaItems() {
+        return this.storage.getByFilter(value => value.mediaItem);
     }
 }
 

@@ -35,11 +35,24 @@ function Store(filePath, opts) {
     };
 
     this.getByFilter = function(filterFn, limit) {
-        const selected = Object.keys(this.data)
-            .map(k => this.data[k])
-            .filter(v => filterFn(v));
+        const selected = Object.keys(this.data);
 
-        return JSON.parse(JSON.stringify(selected));
+        const items = [];
+
+        limit = limit || selected.length;
+        for (
+            let i = 0;
+            items.length < limit && i < selected.length;
+            i++
+        ) {
+            const value = this.data[selected[i]];
+
+            if (filterFn(value)) {
+                items.push(value);
+            }
+        }
+
+        return JSON.parse(JSON.stringify(items));
     };
 
     this._writeFile = () => {

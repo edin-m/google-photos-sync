@@ -22,6 +22,10 @@ class Scheduler {
             downloadMediaItemFile: {
                 fn: this._downloadMediaItemFilesJob,
                 params: [Number]
+            },
+            fixDuplicateFilenames: {
+                fn: this._fixDuplicateFilenamesJob,
+                params: []
             }
         }
     }
@@ -101,6 +105,13 @@ class Scheduler {
 
         this.downloader.downloadMediaItemFiles(mediaItemIdsToDownload)
             .catch(err => console.error(err));
+    }
+
+    _fixDuplicateFilenamesJob() {
+        log.info(this, '');
+        log.info(this, '_fixDuplicateFilenamesJob');
+
+        this.appController.fixFilenamesForDuplicates();
     }
 
 }

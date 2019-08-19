@@ -29,8 +29,6 @@ async function main() {
     const scopes = [GooglePhotos.photosApiReadOnlyScope()];
     await authService.authenticate(scopes);
 
-    log.info(this, '===== App Started =====');
-
     const options = args([
         { name: 'job', type: String },
         { name: 'params', type: String, multiple: true },
@@ -45,6 +43,7 @@ async function main() {
     } else if (options.job) {
         scheduler.triggerNow(options.job, options.params);
     } else {
+        log.info(this, '===== App Started =====');
         scheduler.createJobs();
     }
 }

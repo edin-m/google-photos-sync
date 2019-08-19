@@ -65,8 +65,11 @@ class Downloader {
     }
 
     _downloadMediaItemFiles(mediaItems) {
+        log.verbose(this, '_downloadMediaItemFiles downloading items num', mediaItems.length);
+
         return mediaItems.map(async (mediaItem) => {
-            const where = path.join(this.downloadPath, mediaItem.filename);
+            const filename = this._getFilenameForMediaItem(mediaItem);
+            const where = path.join(this.downloadPath, filename);
             const stream = await this.googlePhotos.createDownloadStream(mediaItem);
 
             return new Promise((resolve, reject) => {
@@ -76,7 +79,7 @@ class Downloader {
                         resolve();
 
                         const stat = fs.statSync(where);
-                        const download = {at: Date.now(), contentLength: stat.size};
+                        const download = { at: Date.now(), contentLength: stat.size };
 
                         const storedItem = this.storage.get(mediaItem.id);
                         storedItem.appData.download = download;
@@ -91,6 +94,17 @@ class Downloader {
                     });
             });
         });
+    }
+
+    _getFilenameForMediaItem(mediaItem) {
+        let filename = mediaItem.filename;
+
+        const storedItem = this.storage.get(mediaItem.id);
+        if (storedItem && storedItem.altFilename) {
+            filename = storedItem.altFilename;
+        }
+
+        return filename;
     }
 
     async probeMediaItems(mediaItemIds) {
