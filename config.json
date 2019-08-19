@@ -1,17 +1,17 @@
 {
   "photosPath": "google/photos",
   "mediaItemsRefresh": {
-    "jobCron": "* */6 * * *",
-    "numberOfItems": 1000
+    "jobCron": "*/30 * * * *",
+    "numberOfItems": 100
   },
   "probeMediaItemsRefresh": {
-    "jobCron": "10 * * * *",
-    "numberOfItems": 200,
+    "jobCron": "*/10 * * * *",
+    "numberOfItems": 10,
     "renewIfOlderThanDays": 7
   },
   "mediaItemsDownload": {
-    "jobCron": "20 * * * *",
-    "numberOfItems": 100
+    "jobCron": "*/2 * * * *",
+    "numberOfItems": 10
   },
   "downloader": {
     "maxDownloadFilesAtOnce": 10

@@ -1,7 +1,7 @@
 # Google Photos Sync
 Sync Google Photos on a local disk.
 
-# THIS IS A READ-ONLY / DOWNLOAD SYNC -- no sync upstream
+# THIS IS A READ-ONLY / DOWNLOAD SYNC
 
 # Set up
 

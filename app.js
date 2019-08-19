@@ -15,20 +15,21 @@ const { log } = require('./log');
 
 async function main() {
     const storage = new Store('secrets/photos.data', {
-        timespanInMs: 10000
+        timespanInMs: 5000
     });
 
     const authStorage = new AuthStorage();
     const authService = new AuthService(authStorage);
     const googlePhotos = new GooglePhotos(storage, authService);
     const downloadPath = config.photosPath;
-    mkdirp(downloadPath);
     const downloader = new Downloader(storage, googlePhotos, downloadPath);
-    const appController = new AppController(storage, googlePhotos);
+    const appController = new AppController(storage, googlePhotos, downloadPath);
     const scheduler = new Scheduler(downloader, appController);
 
     const scopes = [GooglePhotos.photosApiReadOnlyScope()];
     await authService.authenticate(scopes);
+
+    log.info(this, '===== App Started =====');
 
     const options = args([
         { name: 'job', type: String },
@@ -40,15 +41,12 @@ async function main() {
     log.setVerbose(options.verbose);
 
     if (options.count) {
-        console.log('counting');
         log.info(this, 'all media items', storage.getByFilter(item => item.mediaItem).length);
     } else if (options.job) {
         scheduler.triggerNow(options.job, options.params);
     } else {
         scheduler.createJobs();
     }
-
-    console.log('started app');
 }
 
 main().catch(err => console.error(err));

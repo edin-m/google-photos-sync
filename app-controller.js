@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+
 const config = require('./config.json');
 
 const util = require('./util');
@@ -21,9 +24,10 @@ const __referenceStoredItem = {
 };
 
 class AppController {
-    constructor(storage, googlePhotos) {
+    constructor(storage, googlePhotos, downloadPath) {
         this.storage = storage;
         this.googlePhotos = googlePhotos;
+        this.downloadPath = downloadPath;
     }
 
     onMediaItemsDownloaded(mediaItems) {
@@ -119,10 +123,10 @@ class AppController {
     }
 
     findMediaItemsToDownload(numberOfItems) {
-        log.verbose(this, 'findMediaItemsToDownload', numberOfItems.length);
+        log.verbose(this, 'findMediaItemsToDownload', numberOfItems);
 
         const storedItemsToDownload = this.storage.getByFilter(
-            this._createDownloadFilterFn
+            this._createDownloadFilterFn()
         ).slice(0, numberOfItems);
 
         log.verbose(this, 'findMediaItemsToDownload stored items', storedItemsToDownload.length);
@@ -134,15 +138,22 @@ class AppController {
 
     _createDownloadFilterFn() {
         return value => {
-            let download = true;
+            let isContentLengthSame = false;
+            let isFileExists = false;
+            let isFileSizeSame = false;
 
-            if (value.appData && value.appData.download && value.appData.probe) {
-                if (value.appData.probe.contentLength === value.appData.download.contentLength) {
-                    download = false;
+            if (value.appData && value.appData.download && value.appData.probe && value.mediaItem) {
+                isContentLengthSame = value.appData.probe.contentLength === value.appData.download.contentLength;
+
+                const filepath = path.join(this.downloadPath, value.mediaItem.filename);
+                isFileExists = fs.existsSync(filepath);
+
+                if (isFileExists) {
+                    isFileSizeSame = fs.statSync(filepath).size === value.appData.probe.contentLength;
                 }
             }
 
-            return download;
+            return !isContentLengthSame || !isFileExists || !isFileSizeSame;
         };
     }
 }

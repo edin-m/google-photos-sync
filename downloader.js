@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const moment = require('moment');
 
 const mkdirp = require('mkdirp');
 
@@ -25,6 +26,7 @@ class Downloader {
     }
 
     async downloadMediaItems(hintItemsToDownload) {
+        log.verbose(this, 'downloadMediaItems hint items', hintItemsToDownload);
         let nextPageToken = null;
 
         const mediaItems = [];
@@ -37,6 +39,8 @@ class Downloader {
             if (mediaItemsInResponse.length === 0 && mediaItemsResponse.nextPageToken) {
                 console.error('No mediaItems found in response. Continuing to next page.');
             }
+
+            log.info(this, 'downloadMediaItems fetched items', mediaItemsInResponse.length);
 
             mediaItemsInResponse.forEach(mediaItem => {
                 mediaItems.push(mediaItem);
@@ -53,7 +57,7 @@ class Downloader {
         const mediaItems = await this.googlePhotos.batchGet(mediaItemIds);
 
         const groups = util.createGroups(mediaItems, config.downloader.maxDownloadFilesAtOnce);
-        log.verbose(this, 'downloadMediaItemFiles created groups', groups.length);
+        log.verbose(this, 'downloadMediaItemFiles created groups', groups.length, mediaItems.length);
 
         for (let group of groups) {
             await Promise.all(this._downloadMediaItemFiles(group));
@@ -71,13 +75,15 @@ class Downloader {
                     .on('close', () => {
                         resolve();
 
-                        log.verbose(this, 'downloadMediaItemFiles finished writing');
                         const stat = fs.statSync(where);
                         const download = {at: Date.now(), contentLength: stat.size};
 
                         const storedItem = this.storage.get(mediaItem.id);
                         storedItem.appData.download = download;
                         this.storage.set(mediaItem.id, storedItem);
+
+                        const date = moment(mediaItem.mediaMetadata.creationTime).toDate();
+                        fs.utimesSync(where, date, date);
                     }))
                     .on('error', (err) => {
                         log.error(this, 'error downloading a file', err);
