@@ -52,9 +52,8 @@ class Downloader {
         return mediaItems;
     }
 
-    async downloadMediaItemFiles(mediaItemIds) {
-        log.verbose(this, 'downloadMediaItemFiles', mediaItemIds.length);
-        const mediaItems = await this.googlePhotos.batchGet(mediaItemIds);
+    async downloadMediaItemFiles(mediaItems) {
+        log.verbose(this, 'downloadMediaItemFiles', mediaItems.length);
 
         const groups = util.createGroups(mediaItems, config.downloader.maxDownloadFilesAtOnce);
         log.verbose(this, 'downloadMediaItemFiles created groups', groups.length, mediaItems.length);

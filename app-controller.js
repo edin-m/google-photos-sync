@@ -38,6 +38,7 @@ class AppController {
             const stored = this.storage.get(mediaItem.id);
             const appData = this._createAppData(stored);
             this.googlePhotos.storeMediaItem(mediaItem, appData);
+            this.fixFilenamesForDuplicates();
         });
 
         log.info(this, 'onMediaItemsDownloaded total media items', this.storage.getByFilter(item => item.mediaItem).length);
@@ -123,6 +124,20 @@ class AppController {
         });
     }
 
+    async renewMediaItems(mediaItemIds) {
+        log.info(this, 'syncMediaItems', mediaItemIds.length);
+        const mediaItems = await this.googlePhotos.batchGet(mediaItemIds);
+
+        return mediaItems.map(mediaItem => {
+            const storedItem = this.storage.get(mediaItem.id);
+
+            storedItem.mediaItem = mediaItem;
+            this.storage.set(storedItem);
+
+            return storedItem;
+        });
+    }
+
     findMediaItemsToDownload(numberOfItems) {
         log.verbose(this, 'findMediaItemsToDownload', numberOfItems);
 
@@ -155,8 +170,9 @@ class AppController {
                 isFileExists = fs.existsSync(filepath);
 
                 if (isFileExists) {
-                    const contentLength = lo.get(value.appData, 'probe.contentLength') || lo.get(value.appData, 'donwload.contentLength');
-                    isFileSizeSame = fs.statSync(filepath).size === contentLength;
+                    const contentLength = lo.get(value.appData, 'probe.contentLength') || lo.get(value.appData, 'download.contentLength');
+                    const stat = fs.statSync(filepath);
+                    isFileSizeSame = stat.size === contentLength;
                 }
             }
 

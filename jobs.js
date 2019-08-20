@@ -103,8 +103,10 @@ class Scheduler {
         const mediaItemIdsToDownload = this.appController.findMediaItemsToDownload(numberOfItems);
         log.info(this, '_downloadMediaItemFilesJob found', mediaItemIdsToDownload.length);
 
-        this.downloader.downloadMediaItemFiles(mediaItemIdsToDownload)
-            .catch(err => console.error(err));
+        this.appController.renewMediaItems(mediaItemIdsToDownload).then(storedItems => {
+            const mediaItems = storedItems.map(storedItem => storedItem.mediaItem);
+            return this.downloader.downloadMediaItemFiles(mediaItems);
+        }).catch(err => console.error(err));
     }
 
     _fixDuplicateFilenamesJob() {
