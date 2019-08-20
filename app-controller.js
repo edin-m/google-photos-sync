@@ -130,7 +130,7 @@ class AppController {
             this._createDownloadFilterFn(), numberOfItems
         ).slice(0, numberOfItems);
 
-        log.verbose(this, 'findMediaItemsToDownload stored items', storedItemsToDownload.length);
+        log.verbose(this, 'findMediaItemsToDownload stored items', storedItemsToDownload.map(storedItem => storedItem.mediaItem.id));
 
         return storedItemsToDownload
             .filter(storedItem => storedItem.mediaItem)
@@ -146,6 +146,8 @@ class AppController {
             if (value.mediaItem) {
                 if (value.appData.download && value.appData.probe) {
                     isContentLengthSame = value.appData.probe.contentLength === value.appData.download.contentLength;
+                } else {
+                    isContentLengthSame = true;
                 }
 
                 const filename = value.altFilename || value.mediaItem.filename;
@@ -184,11 +186,12 @@ class AppController {
         this._getAllMediaItems()
             .filter(storedItem => !storedItem.altFilename)
             .map(storedItem => {
-                const count = counts[storedItem.mediaItem.filename] || { count: 0, storedItems: [] };
+                const lowercaseFilename = storedItem.mediaItem.filename.toLowerCase();
+                const count = counts[lowercaseFilename] || { count: 0, storedItems: [] };
                 count.count++;
                 count.storedItems.push(storedItem);
 
-                counts[storedItem.mediaItem.filename] = count;
+                counts[lowercaseFilename] = count;
             });
 
         const duplicates = {};
