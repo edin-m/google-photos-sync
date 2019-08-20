@@ -39,7 +39,7 @@ class AppController {
             const appData = this._createAppData(stored);
             this.googlePhotos.storeMediaItem(mediaItem, appData);
         });
-        
+
         this.fixFilenamesForDuplicates();
 
         log.info(this, 'onMediaItemsDownloaded total media items', this.storage.getByFilter(item => item.mediaItem).length);
@@ -146,7 +146,7 @@ class AppController {
             this._createDownloadFilterFn(), numberOfItems
         ).slice(0, numberOfItems);
 
-        log.verbose(this, 'findMediaItemsToDownload stored items', storedItemsToDownload.map(storedItem => storedItem.mediaItem.id));
+        log.verbose(this, 'findMediaItemsToDownload stored items', storedItemsToDownload.length);
 
         return storedItemsToDownload
             .filter(storedItem => storedItem.mediaItem)
