@@ -105,7 +105,7 @@ class Downloader {
     }
 
     _downloadMediaItemFiles(mediaItems) {
-        log.verbose(this, '_downloadMediaItemFiles downloading items num', mediaItems.length);
+        log.verbose(this, '_downloadMediaItemFiles downloading items num:', mediaItems.length);
 
         return mediaItems.map(async (mediaItem) => {
             const filename = this._getFilenameForMediaItem(mediaItem);
@@ -113,7 +113,6 @@ class Downloader {
             const stream = await this.googlePhotos.createDownloadStream(mediaItem);
 
             return new Promise((resolve, reject) => {
-                this.googlePhotos.createDownloadStream(mediaItem);
                 stream.pipe(fs.createWriteStream(where)
                     .on('close', () => {
                         resolve();
