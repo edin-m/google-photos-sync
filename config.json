@@ -4,6 +4,10 @@
     "jobCron": "*/30 * * * *",
     "numberOfItems": 100
   },
+  "mediaItemSearchRefresh": {
+    "jobCron": "*/5 * * * *",
+    "searchDaysBack": 1
+  },
   "probeMediaItemsRefresh": {
     "jobCron": "*/10 * * * *",
     "numberOfItems": 10,

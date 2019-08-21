@@ -26,6 +26,10 @@ class Scheduler {
             fixDuplicateFilenames: {
                 fn: this._fixDuplicateFilenamesJob,
                 params: []
+            },
+            searchMediaItemsJob: {
+                fn: this._searchMediaItemsJob,
+                params: [Number, Number]
             }
         }
     }
@@ -37,9 +41,11 @@ class Scheduler {
     }
 
     _createMediaItemRefreshJob() {
+        const unlimitedItems = 0;
+
         return schedule.scheduleJob(
-            config.mediaItemsRefresh.jobCron,
-            this._mediaItemRefreshJobFn.bind(this, config.mediaItemsRefresh.numberOfItems)
+            config.mediaItemSearchRefresh.jobCron,
+            this._searchMediaItemsJob.bind(this, config.mediaItemSearchRefresh.searchDaysBack, unlimitedItems)
         );
     }
 
@@ -114,6 +120,19 @@ class Scheduler {
         log.info(this, '_fixDuplicateFilenamesJob');
 
         this.appController.fixFilenamesForDuplicates();
+    }
+
+    _searchMediaItemsJob(numOfDaysBack, numOfItems) {
+        log.info(this, '');
+        log.info(this, '_searchMediaItemsJob', numOfDaysBack, numOfItems);
+
+        if (numOfItems === 0) {
+            numOfItems = 9999999999;
+        }
+
+        this.downloader.searchMediaItems(numOfDaysBack, numOfItems).then(mediaItems => {
+            this.appController.onMediaItemsDownloaded(mediaItems);
+        }).catch(err => console.error(err));
     }
 
 }

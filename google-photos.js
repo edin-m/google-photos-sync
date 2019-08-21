@@ -5,11 +5,16 @@ const request = require('request');
 const { createGroups } = require('./util');
 const { log } = require('./log');
 
+/**
+ *
+ */
 class GooglePhotos {
 
     constructor(storage, authService) {
         this.storage = storage;
         this.authService = authService;
+
+        this.maxSearchPageSize = 100;
     }
 
     static listOfScopes() {
@@ -108,6 +113,47 @@ class GooglePhotos {
         };
     }
 
+    async search(searchFilter, numOfItems, pageToken = null) {
+        const requestBody = {
+            pageSize: numOfItems,
+            filters: { }
+        };
+
+        searchFilter.populateFilters(requestBody.filters);
+
+        if (pageToken) {
+            requestBody.pageToken = pageToken;
+        }
+
+        return this._search(requestBody, numOfItems);
+    }
+
+    async _search(requestBody) {
+        const url = `${GooglePhotos.APIs.mediaItems}:search`;
+        const authToken = await this.authService.getToken();
+        const headers = this._headers(authToken.access_token);
+
+        return new Promise((resolve, reject) => {
+            request.post({ url, headers, json: requestBody }, (err, res, body) => {
+                if (err) {
+                    return reject(`Error with POST:search ${url} ${err}`);
+                }
+
+                if (body.error) {
+                    const { code, message, status } = body.error;
+                    return reject(`Error with POST:search ${url} ${code} ${message} ${status}`);
+                }
+
+                if (!body.mediaItems) {
+                    body.mediaItems = [];
+                }
+
+                const { mediaItems, nextPageToken } = body;
+                resolve({ mediaItems, nextPageToken });
+            });
+        });
+    }
+
     storeMediaItem(mediaItem, appData = {}) {
         const data = {
             mediaItem,
@@ -172,6 +218,49 @@ GooglePhotos.APIs = {
     BATCH_GET_LIMIT: 49
 };
 
+/**
+ *
+ */
+class SearchFilters {
+    constructor(includeArchivedMedia) {
+        this.includeArchivedMedia = includeArchivedMedia;
+    }
+
+    setDateFilter(dateFilter) {
+        this.dateFilter = dateFilter;
+    }
+
+    populateFilters(filters) {
+        filters.includeArchivedMedia = this.includeArchivedMedia;
+        if (this.dateFilter) {
+            filters.dateFilter = {
+                dates: this.dateFilter.dates,
+                ranges: this.dateFilter.ranges
+            };
+        }
+    }
+}
+
+class DateFilter {
+    constructor() {
+        this.dates = [];
+        this.ranges = [];
+    }
+
+    addDateFiilter(date) {
+        this.dates.push(date);
+    }
+
+    addRangeFilter({ startDate, endDate }) {
+        this.ranges.push({
+            startDate,
+            endDate
+        });
+    }
+}
+
 module.exports = {
-    GooglePhotos
+    GooglePhotos,
+    SearchFilters,
+    DateFilter
 };

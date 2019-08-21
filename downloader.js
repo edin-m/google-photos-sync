@@ -6,6 +6,7 @@ const mkdirp = require('mkdirp');
 
 const { log } = require('./log');
 const util = require('./util');
+const { SearchFilters, DateFilter } = require('./google-photos');
 
 const config = require('./config.json');
 
@@ -31,8 +32,8 @@ class Downloader {
 
         const mediaItems = [];
 
+        const numOfItems = Math.min(hintItemsToDownload, this.pageSize);
         while (mediaItems.length < hintItemsToDownload) {
-            const numOfItems = Math.min(hintItemsToDownload, this.pageSize);
             let mediaItemsResponse = await this.googlePhotos.listMediaItems(numOfItems, nextPageToken);
 
             const mediaItemsInResponse = mediaItemsResponse.mediaItems || [];
@@ -50,6 +51,46 @@ class Downloader {
         }
 
         return mediaItems;
+    }
+
+    async searchMediaItems(numOfDaysBack, hintNumOfItemsLimit) {
+        log.info(this, 'searchMediaItems', numOfDaysBack, hintNumOfItemsLimit);
+        const searchFilters = this._createSearchFilters(numOfDaysBack);
+
+        const mediaItems = [];
+        let nextPageToken = null;
+
+        const pageSize = Math.min(this.pageSize, hintNumOfItemsLimit);
+        do {
+            const body = await this.googlePhotos.search(searchFilters, pageSize, nextPageToken);
+            nextPageToken = body.nextPageToken;
+            body.mediaItems.forEach(mediaItem => mediaItems.push(mediaItem));
+
+            log.verbose(this, `searchMediaItems found: ${body.mediaItems.length} total found: ${mediaItems.length} next page: ${!!nextPageToken}`);
+        } while (nextPageToken && mediaItems.length < hintNumOfItemsLimit);
+
+        return mediaItems;
+    }
+
+    _createSearchFilters(numOfDaysBack) {
+        const today = moment().format('YYYY MM DD').split(' ');
+        const prev = moment().subtract(numOfDaysBack, 'days').format('YYYY MM DD').split(' ');
+
+        const includeArchived = true;
+        const searchFilters = new SearchFilters(includeArchived);
+        const dateFilter = new DateFilter();
+        dateFilter.addRangeFilter({
+            startDate: {
+                year: prev[0], month: prev[1], day: prev[2]
+            },
+            endDate: {
+                year: today[0], month: today[1], day: today[2]
+            }
+        });
+
+        searchFilters.setDateFilter(dateFilter);
+
+        return searchFilters;
     }
 
     async downloadMediaItemFiles(mediaItems) {

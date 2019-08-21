@@ -27,7 +27,13 @@ function Store(filePath, opts) {
     this.get = function(key) {
         key = key.toString();
 
-        return this.data[key];
+        const value = this.data[key];
+
+        if (!value) {
+            return null;
+        }
+        
+        return JSON.parse(JSON.stringify(value));
     };
 
     this.getKeySet = function() {
