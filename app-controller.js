@@ -129,14 +129,19 @@ class AppController {
         log.info(this, 'syncMediaItems', mediaItemIds.length);
         const mediaItems = await this.googlePhotos.batchGet(mediaItemIds);
 
-        return mediaItems.map(mediaItem => {
+        const storedItems = mediaItems.map(mediaItem => {
             const storedItem = this.storage.get(mediaItem.id);
 
             storedItem.mediaItem = mediaItem;
-            this.storage.set(storedItem);
+            this.storage.set(mediaItem.id, storedItem);
 
             return storedItem;
         });
+
+        // on media item downloaded follows similar process, maybe unify
+        this.fixFilenamesForDuplicates();
+
+        return storedItems;
     }
 
     findMediaItemsToDownload(numberOfItems) {

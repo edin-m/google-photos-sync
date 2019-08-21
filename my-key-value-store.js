@@ -16,6 +16,10 @@ function Store(filePath, opts) {
     const self = this;
 
     this.set = function(key, value) {
+        if (typeof key === 'object' || key.indexOf('Object') >= 0) {
+            throw new Error(`Can't use object as a key ${key} ${value}`);
+        }
+
         key = key.toString();
         this.data[key] = value;
 
@@ -32,7 +36,7 @@ function Store(filePath, opts) {
         if (!value) {
             return null;
         }
-        
+
         return JSON.parse(JSON.stringify(value));
     };
 
@@ -51,9 +55,10 @@ function Store(filePath, opts) {
             items.length < limit && i < selected.length;
             i++
         ) {
-            const value = this.data[selected[i]];
+            const key = selected[i];
+            const value = this.data[key];
 
-            if (filterFn(value)) {
+            if (filterFn(value, key)) {
                 items.push(value);
             }
         }
