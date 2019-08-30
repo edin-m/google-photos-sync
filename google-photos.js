@@ -2,7 +2,7 @@ const { URL } = require('url');
 
 const request = require('request');
 
-const { createGroups } = require('./util');
+const util = require('./util');
 const { log } = require('./log');
 
 /**
@@ -17,24 +17,12 @@ class GooglePhotos {
         this.maxSearchPageSize = 100;
     }
 
-    static listOfScopes() {
-        return [
-            GooglePhotos.photosApiReadOnlyScope()
-        ];
-    }
-
     static photosApiReadOnlyScope() {
         return 'https://www.googleapis.com/auth/photoslibrary.readonly';
     }
 
-    async getMediaItem(mediaItemId) {
-        const url = `${GooglePhotos.APIs.mediaItems}/${mediaItemId}`;
-
-        return this._getRequest(url);
-    }
-
     async batchGet(mediaItemIds) {
-        const groups = createGroups(mediaItemIds, GooglePhotos.APIs.BATCH_GET_LIMIT);
+        const groups = util.createGroups(mediaItemIds, GooglePhotos.APIs.BATCH_GET_LIMIT);
         log.verbose(this, 'batchGet split', mediaItemIds.length, 'into', groups.length, 'groups');
 
         const results = [];
@@ -74,18 +62,8 @@ class GooglePhotos {
         return mediaItems;
     }
 
-    async listMediaItems(pageSize = 10, nextPageToken = null) {
-        const url = new URL(GooglePhotos.APIs.mediaItems);
-
-        !!pageSize && url.searchParams.append('pageSize', pageSize);
-        !!nextPageToken && url.searchParams.append('pageToken', nextPageToken);
-
-        return this._getRequest(url.toString());
-    }
-
     async _getRequest(url) {
-        const authToken = await this.authService.getToken();
-        const headers = this._headers(authToken.access_token);
+        const headers = await this._getHeaders();
 
         return new Promise((resolve, reject) => {
             request(url, { headers }, (err, resp, body) => {
@@ -106,13 +84,6 @@ class GooglePhotos {
         });
     }
 
-    _headers(access_token) {
-        return {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${access_token}`
-        };
-    }
-
     async search(searchFilter, numOfItems, pageToken = null) {
         const requestBody = {
             pageSize: numOfItems,
@@ -131,7 +102,7 @@ class GooglePhotos {
     async _search(requestBody) {
         const url = `${GooglePhotos.APIs.mediaItems}:search`;
         const authToken = await this.authService.getToken();
-        const headers = this._headers(authToken.access_token);
+        const headers = await this._getHeaders();
 
         return new Promise((resolve, reject) => {
             request.post({ url, headers, json: requestBody }, (err, res, body) => {
@@ -164,8 +135,7 @@ class GooglePhotos {
     }
 
     async probeUrlForContentLength(mediaItem) {
-        const authToken = await this.authService.getToken();
-        const headers = this._headers(authToken.access_token);
+        const headers = this._getHeaders();
 
         return new Promise((resolve, reject) => {
             const url = this._createDownloadUrl(mediaItem);
@@ -190,9 +160,7 @@ class GooglePhotos {
     }
 
     async createDownloadStream(mediaItem) {
-        const authToken = await this.authService.getToken();
-        const headers = this._headers(authToken.access_token);
-
+        const headers = await this._getHeaders();
         const url = this._createDownloadUrl(mediaItem);
 
         return request(url, { headers });
@@ -211,6 +179,18 @@ class GooglePhotos {
         }
 
         return `${mediaItem.baseUrl}=${downloadParams}`;
+    }
+
+    async _getHeaders() {
+        const authToken = await this.authService.getToken();
+        return this._headers(authToken.access_token);
+    }
+
+    _headers(access_token) {
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${access_token}`
+        };
     }
 }
 GooglePhotos.APIs = {
@@ -241,6 +221,9 @@ class SearchFilters {
     }
 }
 
+/**
+ *
+ */
 class DateFilter {
     constructor() {
         this.dates = [];
