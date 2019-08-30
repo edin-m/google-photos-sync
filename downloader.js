@@ -26,33 +26,6 @@ class Downloader {
         }
     }
 
-    async downloadMediaItems(hintItemsToDownload) {
-        log.verbose(this, 'downloadMediaItems hint items', hintItemsToDownload);
-        let nextPageToken = null;
-
-        const mediaItems = [];
-
-        const numOfItems = Math.min(hintItemsToDownload, this.pageSize);
-        while (mediaItems.length < hintItemsToDownload) {
-            let mediaItemsResponse = await this.googlePhotos.listMediaItems(numOfItems, nextPageToken);
-
-            const mediaItemsInResponse = mediaItemsResponse.mediaItems || [];
-            if (mediaItemsInResponse.length === 0 && mediaItemsResponse.nextPageToken) {
-                console.error('No mediaItems found in response. Continuing to next page.');
-            }
-
-            log.info(this, 'downloadMediaItems fetched items', mediaItemsInResponse.length);
-
-            mediaItemsInResponse.forEach(mediaItem => {
-                mediaItems.push(mediaItem);
-            });
-
-            nextPageToken = mediaItemsResponse.nextPageToken;
-        }
-
-        return mediaItems;
-    }
-
     async searchMediaItems(numOfDaysBack, hintNumOfItemsLimit) {
         log.info(this, 'searchMediaItems', numOfDaysBack, hintNumOfItemsLimit);
         const searchFilters = this._createSearchFilters(numOfDaysBack);

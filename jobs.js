@@ -11,10 +11,6 @@ class Scheduler {
         this.jobs = [];
 
         this.availableJobs = {
-            mediaItemRefresh: {
-                fn: this._mediaItemRefreshJobFn,
-                params: [Number]
-            },
             probeMediaItemRefresh: {
                 fn: this._probeMediaItemRefreshFn,
                 params: [Number, Number]
@@ -30,17 +26,21 @@ class Scheduler {
             searchMediaItemsJob: {
                 fn: this._searchMediaItemsJob,
                 params: [Number, Number]
+            },
+            appStartupJob: {
+                fn: this._appStartupJob,
+                params: []
             }
         }
     }
 
     createJobs() {
-        this.jobs.push(this._createMediaItemRefreshJob());
+        this.jobs.push(this._createMediaItemSearchJob());
         this.jobs.push(this._createProbeMediaItemRefreshJob());
         this.jobs.push(this._createDownloadMediaItemFilesJob());
     }
 
-    _createMediaItemRefreshJob() {
+    _createMediaItemSearchJob() {
         const unlimitedItems = 0;
 
         return schedule.scheduleJob(
@@ -77,15 +77,6 @@ class Scheduler {
 
         const converted = [...params].slice(0, job.params.length).map((item, idx) => job.params[idx](item));
         return job.fn.apply(this, converted);
-    }
-
-    _mediaItemRefreshJobFn(numOfItems) {
-        log.info(this, '');
-        log.info(this, '_mediaItemRefreshJobFn', numOfItems);
-
-        this.downloader.downloadMediaItems(numOfItems).then(mediaItems => {
-            this.appController.onMediaItemsDownloaded(mediaItems);
-        }).catch(err => console.error(err));
     }
 
     _probeMediaItemRefreshFn(renewIfOlderThanDays, numberOfItems) {
@@ -133,6 +124,13 @@ class Scheduler {
         this.downloader.searchMediaItems(numOfDaysBack, numOfItems).then(mediaItems => {
             this.appController.onMediaItemsDownloaded(mediaItems);
         }).catch(err => console.error(err));
+    }
+
+    _appStartupJob() {
+        log.info(this, '');
+        log.info(this, '_appStartupJob');
+
+
     }
 
 }
