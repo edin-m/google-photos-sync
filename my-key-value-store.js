@@ -40,6 +40,10 @@ function Store(filePath, opts) {
         return JSON.parse(JSON.stringify(value));
     };
 
+    this.getAll = function () {
+        return Object.values(this.data);
+    };
+
     this.getKeySet = function() {
         return new Set(Object.keys(this.data));
     };

@@ -35,9 +35,12 @@ class AppController {
         log.info(this, 'onMediaItemsDownloaded', mediaItems.length);
 
         mediaItems.forEach(mediaItem => {
-            const stored = this.storage.get(mediaItem.id);
-            const appData = this._createAppData(stored);
-            this.googlePhotos.storeMediaItem(mediaItem, appData);
+            const storedItem = this.storage.get(mediaItem.id);
+            // const appData = this._createAppData(stored);
+            storedItem.appData = this._createAppData(storedItem);
+            storedItem.mediaItem = mediaItem;
+            // this.googlePhotos.storeMediaItem(mediaItem, appData);
+            this.storage.set(mediaItem.id, storedItem);
         });
 
         this.fixFilenamesForDuplicates();
@@ -126,22 +129,23 @@ class AppController {
     }
 
     async renewMediaItems(mediaItemIds) {
-        log.info(this, 'syncMediaItems', mediaItemIds.length);
+        log.info(this, 'renewMediaItems', mediaItemIds.length);
         const mediaItems = await this.googlePhotos.batchGet(mediaItemIds);
+        return this.onMediaItemsDownloaded(mediaItems);
 
-        const storedItems = mediaItems.map(mediaItem => {
-            const storedItem = this.storage.get(mediaItem.id);
-
-            storedItem.mediaItem = mediaItem;
-            this.storage.set(mediaItem.id, storedItem);
-
-            return storedItem;
-        });
-
-        // on media item downloaded follows similar process, maybe unify
-        this.fixFilenamesForDuplicates();
-
-        return storedItems;
+        // const storedItems = mediaItems.map(mediaItem => {
+        //     const storedItem = this.storage.get(mediaItem.id);
+        //
+        //     storedItem.mediaItem = mediaItem;
+        //     this.storage.set(mediaItem.id, storedItem);
+        //
+        //     return storedItem;
+        // });
+        //
+        // // on media item downloaded follows similar process, maybe unify
+        // this.fixFilenamesForDuplicates();
+        //
+        // return storedItems;
     }
 
     findMediaItemsToDownload(numberOfItems) {

@@ -1,5 +1,3 @@
-const { URL } = require('url');
-
 const request = require('request');
 
 const util = require('./util');
@@ -49,19 +47,6 @@ class GooglePhotos {
         return this._filterMediaItemResultsByStatus(result.mediaItemResults);
     }
 
-    _filterMediaItemResultsByStatus(mediaItemResults) {
-        const mediaItems = mediaItemResults
-            .filter(result => !result.status)
-            .map(result => result.mediaItem);
-
-        if (mediaItems.length !== mediaItemResults.length) {
-            const numOfErrorStatus = mediaItemResults.filter(result => !!result.status);
-            console.error(`There are ${numOfErrorStatus} items with error`);
-        }
-
-        return mediaItems;
-    }
-
     async _getRequest(url) {
         const headers = await this._getHeaders();
 
@@ -84,6 +69,19 @@ class GooglePhotos {
         });
     }
 
+    _filterMediaItemResultsByStatus(mediaItemResults) {
+        const mediaItems = mediaItemResults
+            .filter(result => !result.status)
+            .map(result => result.mediaItem);
+
+        if (mediaItems.length !== mediaItemResults.length) {
+            const numOfErrorStatus = mediaItemResults.filter(result => !!result.status);
+            console.error(`There are ${numOfErrorStatus} items with error`);
+        }
+
+        return mediaItems;
+    }
+
     async search(searchFilter, numOfItems, pageToken = null) {
         const requestBody = {
             pageSize: numOfItems,
@@ -101,7 +99,6 @@ class GooglePhotos {
 
     async _search(requestBody) {
         const url = `${GooglePhotos.APIs.mediaItems}:search`;
-        const authToken = await this.authService.getToken();
         const headers = await this._getHeaders();
 
         return new Promise((resolve, reject) => {
