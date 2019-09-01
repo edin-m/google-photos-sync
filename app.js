@@ -20,7 +20,7 @@ async function main() {
 
     const authStorage = new AuthStorage();
     const authService = new AuthService(authStorage);
-    const googlePhotos = new GooglePhotos(storage, authService);
+    const googlePhotos = new GooglePhotos(authService);
     const downloadPath = config.photosPath;
     const downloader = new Downloader(storage, googlePhotos, downloadPath);
     const appController = new AppController(storage, googlePhotos, downloadPath);
@@ -39,12 +39,13 @@ async function main() {
     log.setVerbose(options.verbose);
 
     if (options.count) {
-        log.info(this, 'all media items', storage.getByFilter(item => item.mediaItem).length);
+        log.info(this, 'all media items', storage.count());
     } else if (options.job) {
         scheduler.triggerNow(options.job, options.params);
     } else {
         log.info(this, '===== App Started =====');
         scheduler.createJobs();
+        scheduler.triggerNow('appStartupJob', []);
     }
 }
 

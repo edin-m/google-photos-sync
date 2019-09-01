@@ -9,8 +9,6 @@ const moment = require('moment');
 const CREDENTIALS = require('./secrets/credentials.json').web;
 
 class AuthStorage {
-    constructor() {
-    }
 
     storeToken(token) {
         const storedToken = {

@@ -19,10 +19,6 @@ class Scheduler {
                 fn: this._downloadMediaItemFilesJob,
                 params: [Number]
             },
-            fixDuplicateFilenames: {
-                fn: this._fixDuplicateFilenamesJob,
-                params: []
-            },
             searchMediaItemsJob: {
                 fn: this._searchMediaItemsJob,
                 params: [Number, Number]
@@ -102,15 +98,10 @@ class Scheduler {
 
         this.appController.renewMediaItems(mediaItemIdsToDownload).then(storedItems => {
             const mediaItems = storedItems.map(storedItem => storedItem.mediaItem);
-            return this.downloader.downloadMediaItemFiles(mediaItems);
+            return this.downloader.downloadMediaItemFiles(mediaItems).then(files => {
+                this.appController.onFilesDownloaded(files);
+            });
         }).catch(err => console.error(err));
-    }
-
-    _fixDuplicateFilenamesJob() {
-        log.info(this, '');
-        log.info(this, '_fixDuplicateFilenamesJob');
-
-        this.appController.fixFilenamesForDuplicates();
     }
 
     _searchMediaItemsJob(numOfDaysBack, numOfItems) {
@@ -130,7 +121,24 @@ class Scheduler {
         log.info(this, '');
         log.info(this, '_appStartupJob');
 
+        const existingFiles = this.downloader.getExistingFiles();
+        const storedItemsMap = this.appController.getStoredItemsByFilenameMap(
+            existingFiles.map(file => file.filename)
+        );
 
+        let files = existingFiles
+            .filter(file => storedItemsMap.hasOwnProperty(file.filename))
+            .filter(file => this.appController.hasStoredItemDiscrepancy(storedItemsMap[file.filename].storedItem));
+
+        log.info(this, 'files with discrepancies', files.length);
+
+        files.forEach(file => {
+            const mediaItem = storedItemsMap[file.filename].storedItem.mediaItem;
+            return { valid: true, where: file.where, mediaItem };
+        });
+
+        const res = this.appController.onFilesDownloaded(files);
+        log.info(this, 'updated info on', res.length, 'already downloaded items');
     }
 
 }

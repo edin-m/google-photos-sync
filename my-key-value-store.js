@@ -26,6 +26,8 @@ function Store(filePath, opts) {
         if (!this.saveTimeout) {
             this.saveTimeout = setTimeout(this._writeFile.bind(this), this.opts.timespanInMs);
         }
+
+        return value;
     };
 
     this.get = function(key) {
@@ -44,8 +46,8 @@ function Store(filePath, opts) {
         return Object.values(this.data);
     };
 
-    this.getKeySet = function() {
-        return new Set(Object.keys(this.data));
+    this.count = function () {
+        return this.getAll().length;
     };
 
     this.getByFilter = function(filterFn, limit) {

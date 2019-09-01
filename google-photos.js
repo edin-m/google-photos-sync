@@ -8,11 +8,8 @@ const { log } = require('./log');
  */
 class GooglePhotos {
 
-    constructor(storage, authService) {
-        this.storage = storage;
+    constructor(authService) {
         this.authService = authService;
-
-        this.maxSearchPageSize = 100;
     }
 
     static photosApiReadOnlyScope() {
@@ -120,15 +117,6 @@ class GooglePhotos {
                 resolve({ mediaItems, nextPageToken });
             });
         });
-    }
-
-    storeMediaItem(mediaItem, appData = {}) {
-        const data = {
-            mediaItem,
-            appData
-        };
-
-        return this.storage.set(mediaItem.id, data);
     }
 
     async probeUrlForContentLength(mediaItem) {

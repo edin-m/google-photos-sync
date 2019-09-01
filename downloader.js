@@ -18,12 +18,6 @@ class Downloader {
         this.downloadPath = downloadPath;
         mkdirp(downloadPath);
         this.pageSize = 100;
-
-        this.downloaderState = this.storage.get('class.Downloader.state');
-
-        if (!this.downloaderState) {
-            this.downloaderState = {};
-        }
     }
 
     async searchMediaItems(numOfDaysBack, hintNumOfItemsLimit) {
@@ -62,7 +56,6 @@ class Downloader {
         });
 
         searchFilters.setDateFilter(dateFilter);
-
         return searchFilters;
     }
 
@@ -72,9 +65,14 @@ class Downloader {
         const groups = util.createGroups(mediaItems, config.downloader.maxDownloadFilesAtOnce);
         log.verbose(this, 'downloadMediaItemFiles created groups', groups.length, mediaItems.length);
 
+        const files = [];
+
         for (let group of groups) {
-            await Promise.all(this._downloadMediaItemFiles(group));
+            const filesDownloaded = await Promise.all(this._downloadMediaItemFiles(group));
+            filesDownloaded.forEach(file => files.push(file));
         }
+
+        return files;
     }
 
     _downloadMediaItemFiles(mediaItems) {
@@ -88,21 +86,11 @@ class Downloader {
             return new Promise((resolve, reject) => {
                 stream.pipe(fs.createWriteStream(where)
                     .on('close', () => {
-                        resolve();
-
-                        const stat = fs.statSync(where);
-                        const download = { at: Date.now(), contentLength: stat.size };
-
-                        const storedItem = this.storage.get(mediaItem.id);
-                        storedItem.appData.download = download;
-                        this.storage.set(mediaItem.id, storedItem);
-
-                        const date = moment(mediaItem.mediaMetadata.creationTime).toDate();
-                        fs.utimesSync(where, date, date);
+                        resolve({ valid: true, where, mediaItem });
                     }))
                     .on('error', (err) => {
-                        log.error(this, 'error downloading a file', err);
-                        resolve();
+                        log.error(this, 'error downloading a file', where, err);
+                        resolve({ valid: false, where, mediaItem });
                     });
             });
         });
@@ -135,6 +123,17 @@ class Downloader {
         }));
 
         return contentLengthMap;
+    }
+
+    getExistingFiles() {
+        const filenames = fs.readdirSync(this.downloadPath);
+
+        return filenames.map(filename => {
+            const where = path.join(this.downloadPath, filename);
+            const stats = fs.statSync(where);
+
+            return { where, filename, fileSize: stats.size };
+        });
     }
 }
 
