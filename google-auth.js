@@ -29,13 +29,13 @@ class AuthStorage {
         const filePath = this._getTokenFilePath();
         if (fs.existsSync(filePath)) {
             data += fs.readFileSync(filePath).toString();
-        }
 
-        try {
-            token = JSON.parse(data);
-        } catch (err) {
-            console.log(err);
-            token = null;
+            try {
+                token = JSON.parse(data);
+            } catch (err) {
+                console.log(err);
+                token = null;
+            }
         }
 
         const isTokenValid = !!token && !!token.token &&
