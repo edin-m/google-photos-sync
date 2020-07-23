@@ -48,3 +48,6 @@ $ node app --job <job-name> --params <job-params-space-separated>
 
 For a full list of jobs and job parameters, check out jobs.js.
 
+# TODO
+
+[ ] resume download -- right now it overwrites if a file is partially downloaded

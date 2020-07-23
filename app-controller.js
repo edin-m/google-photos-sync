@@ -27,17 +27,21 @@ const __referenceStoredItem = {
 };
 
 class AppController {
-    constructor(storage, googlePhotos, downloadPath) {
-        this.storage = storage;
+    constructor(photoDb, googlePhotos, downloadPath) {
+        this.photoDb = photoDb;
         this.googlePhotos = googlePhotos;
         this.downloadPath = downloadPath;
+    }
+
+    onAlbums(albums) {
+        log.info(this, 'onAlbums');
     }
 
     onMediaItemsDownloaded(mediaItems) {
         log.info(this, 'onMediaItemsDownloaded', mediaItems.length);
 
         const storedItems = mediaItems.map(mediaItem => {
-            let storedItem = this.storage.get(mediaItem.id);
+            let storedItem = this.photoDb.get(mediaItem.id);
 
             if (storedItem == null) {
                 storedItem = { mediaItem, appData: {} };
@@ -45,10 +49,10 @@ class AppController {
                 storedItem.mediaItem = mediaItem;
             }
 
-            return this.storage.set(mediaItem.id, storedItem);
+            return this.photoDb.set(mediaItem.id, storedItem);
         });
 
-        log.info(this, 'onMediaItemsDownloaded total media items', this.storage.getAll().length);
+        log.info(this, 'onMediaItemsDownloaded total media items', this.photoDb.getAll().length);
         this._fixFilenamesForDuplicates();
         return storedItems;
     }
@@ -62,7 +66,7 @@ class AppController {
             duplicates[filename].storedItems.forEach((storedItem, idx) => {
                 storedItem.altFilename = `${idx}_${filename}`;
 
-                this.storage.set(storedItem.mediaItem.id, storedItem);
+                this.photoDb.set(storedItem.mediaItem.id, storedItem);
             });
         }
     }
@@ -92,13 +96,13 @@ class AppController {
     }
 
     _getAllMediaItems() {
-        return this.storage.getByFilter(value => value.mediaItem);
+        return this.photoDb.getByFilter(value => value.mediaItem);
     }
 
     findMediaItemIdsToProbe(renewIfOlderThanDays, numberOfItems) {
         log.verbose(this, 'findMediaItemIdsToProbe', renewIfOlderThanDays, numberOfItems);
 
-        const storedItemsToProbe = this.storage.getByFilter(
+        const storedItemsToProbe = this.photoDb.getByFilter(
             this._createProbeFilterFn(renewIfOlderThanDays)
         ).slice(0, numberOfItems);
 
@@ -125,14 +129,14 @@ class AppController {
 
         const keys = Object.keys(contentLengthMap);
         const storedItems = keys.map(key => {
-            const storedItem = this.storage.get(key);
+            const storedItem = this.photoDb.get(key);
 
             const probeData = storedItem.appData.probe || { at: 0, contentLength: 0 };
             probeData.at = Date.now();
             probeData.contentLength = Number(contentLengthMap[key]);
             storedItem.appData.probe = probeData;
 
-            this.storage.set(storedItem.mediaItem.id, storedItem);
+            this.photoDb.set(storedItem.mediaItem.id, storedItem);
             return storedItem;
         });
 
@@ -144,7 +148,7 @@ class AppController {
                 storedItem.appData.download = null;
                 return storedItem;
             })
-            .map(storedItem => this.storage.set(storedItem.mediaItem.id, storedItem));
+            .map(storedItem => this.photoDb.set(storedItem.mediaItem.id, storedItem));
     }
 
     _chooseFilesForDownload(storedItems) {
@@ -169,7 +173,7 @@ class AppController {
     findMediaItemsToDownload(numberOfItems) {
         log.verbose(this, 'findMediaItemsToDownload', numberOfItems);
 
-        const storedItemsToDownload = this.storage.getByFilter(
+        const storedItemsToDownload = this.photoDb.getByFilter(
             this._createDownloadFilterFn(), numberOfItems
         ).slice(0, numberOfItems);
 
@@ -211,7 +215,7 @@ class AppController {
 
         const map = {};
 
-        this.storage.getAll().forEach(storedItem => {
+        this.photoDb.getAll().forEach(storedItem => {
             const filename = this._getStoredItemFilename(storedItem);
 
             if (filenamesSet.has(filename)) {
@@ -246,9 +250,9 @@ class AppController {
             const date = moment(mediaItem.mediaMetadata.creationTime).toDate();
             fs.utimesSync(where, date, date);
 
-            const storedItem = this.storage.get(mediaItem.id);
+            const storedItem = this.photoDb.get(mediaItem.id);
             storedItem.appData.download = download;
-            return this.storage.set(mediaItem.id, storedItem);
+            return this.photoDb.set(mediaItem.id, storedItem);
         });
     }
 

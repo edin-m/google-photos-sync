@@ -11,8 +11,8 @@ const { SearchFilters, DateFilter } = require('./google-photos');
 const config = require('./config.json');
 
 class Downloader {
-    constructor(storage, googlePhotos, downloadPath) {
-        this.storage = storage;
+    constructor(photoDb, googlePhotos, downloadPath) {
+        this.photoDb = photoDb;
         this.googlePhotos = googlePhotos;
 
         this.downloadPath = downloadPath;
@@ -20,23 +20,18 @@ class Downloader {
         this.pageSize = 100;
     }
 
+    async searchAlbums(albumId, hintNumOfItemsLimit) {
+        log.info(this, 'searchAlbums');
+        const searchFilters = { albumId };
+
+        return this._search(searchFilters, hintNumOfItemsLimit);
+    }
+
     async searchMediaItems(numOfDaysBack, hintNumOfItemsLimit) {
         log.info(this, 'searchMediaItems', numOfDaysBack, hintNumOfItemsLimit);
         const searchFilters = this._createSearchFilters(numOfDaysBack);
 
-        const mediaItems = [];
-        let nextPageToken = null;
-
-        const pageSize = Math.min(this.pageSize, hintNumOfItemsLimit);
-        do {
-            const body = await this.googlePhotos.search(searchFilters, pageSize, nextPageToken);
-            nextPageToken = body.nextPageToken;
-            body.mediaItems.forEach(mediaItem => mediaItems.push(mediaItem));
-
-            log.verbose(this, `searchMediaItems found: ${body.mediaItems.length} total found: ${mediaItems.length} next page: ${!!nextPageToken}`);
-        } while (nextPageToken && mediaItems.length < hintNumOfItemsLimit);
-
-        return mediaItems;
+        return this._search(searchFilters, hintNumOfItemsLimit);
     }
 
     _createSearchFilters(numOfDaysBack) {
@@ -59,6 +54,22 @@ class Downloader {
         return searchFilters;
     }
 
+    async _search(searchFilters, hintNumOfItemsLimit) {
+        const mediaItems = [];
+        let nextPageToken = null;
+
+        const pageSize = Math.min(this.pageSize, hintNumOfItemsLimit);
+        do {
+            const body = await this.googlePhotos.search(searchFilters, pageSize, nextPageToken);
+            nextPageToken = body.nextPageToken;
+            body.mediaItems.forEach(mediaItem => mediaItems.push(mediaItem));
+
+            log.verbose(this, `searchMediaItems found: ${body.mediaItems.length} total found: ${mediaItems.length} next page: ${!!nextPageToken}`);
+        } while (nextPageToken && mediaItems.length < hintNumOfItemsLimit);
+
+        return mediaItems;
+    }
+
     async downloadMediaItemFiles(mediaItems) {
         log.verbose(this, 'downloadMediaItemFiles', mediaItems.length);
 
@@ -79,6 +90,7 @@ class Downloader {
         log.verbose(this, '_downloadMediaItemFiles downloading items num:', mediaItems.length);
 
         return mediaItems.map(async (mediaItem) => {
+            log.info(this, 'Downloading ', mediaItem.filename);
             const filename = this._getFilenameForMediaItem(mediaItem);
             const where = path.join(this.downloadPath, filename);
             const stream = await this.googlePhotos.createDownloadStream(mediaItem);
@@ -86,6 +98,7 @@ class Downloader {
             return new Promise((resolve, reject) => {
                 stream.pipe(fs.createWriteStream(where)
                     .on('close', () => {
+                        this._setFileTimestamp(where, mediaItem);
                         resolve({ valid: true, where, mediaItem });
                     }))
                     .on('error', (err) => {
@@ -96,10 +109,15 @@ class Downloader {
         });
     }
 
+    _setFileTimestamp(where, mediaItem) {
+        const date = moment(mediaItem.mediaMetadata.creationTime).toDate();
+        fs.utimesSync(where, date, date);
+    }
+
     _getFilenameForMediaItem(mediaItem) {
         let filename = mediaItem.filename;
 
-        const storedItem = this.storage.get(mediaItem.id);
+        const storedItem = this.photoDb.get(mediaItem.id);
         if (storedItem && storedItem.altFilename) {
             filename = storedItem.altFilename;
         }

@@ -3,9 +3,11 @@ const schedule = require('node-schedule');
 const config = require('./config.json');
 
 const { log } = require('./log');
+const logger = require('./log');
 
 class Scheduler {
     constructor(downloader, appController) {
+        this.log = logger.bind(this);
         this.downloader = downloader;
         this.appController = appController;
         this.jobs = [];
@@ -13,19 +15,28 @@ class Scheduler {
         this.availableJobs = {
             probeMediaItemRefresh: {
                 fn: this._probeMediaItemRefreshFn,
-                params: [Number, Number]
+                params: [Number, Number],
+                description: 'renewIfOlderThanDays, numberOfItems'
             },
             downloadMediaItemFile: {
                 fn: this._downloadMediaItemFilesJob,
-                params: [Number]
+                params: [Number],
+                description: 'numberOfItems'
             },
             searchMediaItemsJob: {
                 fn: this._searchMediaItemsJob,
-                params: [Number, Number]
+                params: [Number, Number],
+                description: 'numOfDaysBack, numOfItems'
+            },
+            refreshAlbums: {
+                fn: this._refreshAlbums,
+                params: [],
+                description: '{}'
             },
             appStartupJob: {
                 fn: this._appStartupJob,
-                params: []
+                params: [],
+                description: '()'
             }
         }
     }
@@ -64,11 +75,11 @@ class Scheduler {
         const job = this.availableJobs[name];
 
         if (!job) {
-            throw new Error(`The job under the name of ${name} does not exist`);
+            throw new Error(`Job ${name} does not exist. Try one of: ${Object.keys(this.availableJobs).join(',')}`);
         }
 
         if (params.length < job.params.length) {
-            throw new Error(`Not all params have been provided, required ${job.params.length}`);
+            throw new Error(`Not all params have been provided, required: ${job.description}`);
         }
 
         const converted = [...params].slice(0, job.params.length).map((item, idx) => job.params[idx](item));
@@ -117,9 +128,18 @@ class Scheduler {
         }).catch(err => console.error(err));
     }
 
+    _refreshAlbums() {
+        this.log.info('');
+        this.log.info('Refreshing albums');
+
+        this.downloader.searchAlbums().then(albums => {
+            this.appController.onAlbums(albums);
+        }).catch(err => console.error(err));
+    }
+
     _appStartupJob() {
         log.info(this, '');
-        log.info(this, '_appStartupJob');
+        log.info(this, 'appStartupJob');
 
         const existingFiles = this.downloader.getExistingFiles();
         const storedItemsMap = this.appController.getStoredItemsByFilenameMap(

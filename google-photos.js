@@ -44,6 +44,29 @@ class GooglePhotos {
         return this._filterMediaItemResultsByStatus(result.mediaItemResults);
     }
 
+    async listAlbums(nextPageToken = null) {
+        const albums = [];
+
+        let url = GooglePhotos.APIs.albums;
+        do {
+            if (nextPageToken != null) {
+                url = `${GooglePhotos.APIs.albums}?pageToken=${nextPageToken}`;
+            }
+
+            try {
+                const response = await this._getRequest(url);
+                response.albums.forEach(album => albums.push(album));
+                nextPageToken = response.nextPageToken;
+            } catch (err) {
+                log.error(err);
+                nextPageToken = null;
+            }
+
+        } while (nextPageToken != null);
+
+        return albums;
+    }
+
     async _getRequest(url) {
         const headers = await this._getHeaders();
 
@@ -81,11 +104,15 @@ class GooglePhotos {
 
     async search(searchFilter, numOfItems, pageToken = null) {
         const requestBody = {
-            pageSize: numOfItems,
-            filters: { }
+            pageSize: numOfItems
         };
 
-        searchFilter.populateFilters(requestBody.filters);
+        if (searchFilter.albumId) {
+            requestBody.albumId = searchFilter.albumId;
+        } else {
+            requestBody.filters = { };
+            searchFilter.populateFilters(requestBody.filters);
+        }
 
         if (pageToken) {
             requestBody.pageToken = pageToken;
@@ -180,6 +207,7 @@ class GooglePhotos {
 }
 GooglePhotos.APIs = {
     mediaItems: 'https://photoslibrary.googleapis.com/v1/mediaItems',
+    albums: 'https://photoslibrary.googleapis.com/v1/albums',
     BATCH_GET_LIMIT: 49
 };
 
