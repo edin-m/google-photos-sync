@@ -27,14 +27,32 @@ const __referenceStoredItem = {
 };
 
 class AppController {
-    constructor(photoDb, googlePhotos, downloadPath) {
+    constructor(photoDb, albumDb, googlePhotos, downloadPath) {
         this.photoDb = photoDb;
+        this.albumDb = albumDb;
         this.googlePhotos = googlePhotos;
         this.downloadPath = downloadPath;
     }
 
     onAlbums(albums) {
         log.info(this, 'onAlbums');
+
+        const maxTitleStringLen = albums.reduce((prev, curr) => Math.max(prev, curr.title.length), 0);
+
+        albums.forEach(album => {
+            album.items = [];
+            this.albumDb.set(album.id, album);
+
+            log.info(this, album.title.padEnd(maxTitleStringLen), album.id)
+        });
+    }
+
+    onRefreshAlbum(album, items) {
+        log.info(this, 'onRefreshAlbum');
+
+        album.items = items;
+        let albums = [album];
+        this.onAlbums(albums);
     }
 
     onMediaItemsDownloaded(mediaItems) {

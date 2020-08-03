@@ -1,5 +1,6 @@
 {
   "photosPath": "google/photos",
+  "albumsPath": "google/albums",
   "mediaItemsRefresh": {
     "jobCron": "*/30 * * * *",
     "numberOfItems": 100

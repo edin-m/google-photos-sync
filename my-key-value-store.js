@@ -111,7 +111,7 @@ function Store(filePath, opts) {
 
     function getDefaultOpts() {
         return {
-            timespanInMs: 1000
+            timespanInMs: 5000
         };
     }
 

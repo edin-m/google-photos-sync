@@ -3,11 +3,9 @@ const schedule = require('node-schedule');
 const config = require('./config.json');
 
 const { log } = require('./log');
-const logger = require('./log');
 
 class Scheduler {
     constructor(downloader, appController) {
-        this.log = logger.bind(this);
         this.downloader = downloader;
         this.appController = appController;
         this.jobs = [];
@@ -30,8 +28,8 @@ class Scheduler {
             },
             refreshAlbums: {
                 fn: this._refreshAlbums,
-                params: [],
-                description: '{}'
+                params: [String],
+                description: 'albumName'
             },
             appStartupJob: {
                 fn: this._appStartupJob,
@@ -41,7 +39,7 @@ class Scheduler {
         }
     }
 
-    createJobs() {
+    scheduleJobs() {
         this.jobs.push(this._createMediaItemSearchJob());
         this.jobs.push(this._createProbeMediaItemRefreshJob());
         this.jobs.push(this._createDownloadMediaItemFilesJob());
@@ -129,9 +127,6 @@ class Scheduler {
     }
 
     _refreshAlbums() {
-        this.log.info('');
-        this.log.info('Refreshing albums');
-
         this.downloader.searchAlbums().then(albums => {
             this.appController.onAlbums(albums);
         }).catch(err => console.error(err));

@@ -14,22 +14,22 @@ const AppController = require('./app-controller');
 const { log } = require('./log');
 
 async function main() {
-    const photoDb = new Store('secrets/photos.data', {
-        timespanInMs: 5000
-    });
+    const photoDb = new Store('secrets/photos.data');
+    const albumDb = new Store('secrets/albums.db');
 
     const authStorage = new AuthStorage();
     const authService = new AuthService(authStorage);
     const googlePhotos = new GooglePhotos(authService);
     const downloadPath = config.photosPath;
     const downloader = new Downloader(photoDb, googlePhotos, downloadPath);
-    const appController = new AppController(photoDb, googlePhotos, downloadPath);
+    const appController = new AppController(photoDb, albumDb, googlePhotos, downloadPath);
     const scheduler = new Scheduler(downloader, appController);
 
     const options = args([
         { name: 'job', type: String },
         { name: 'help', alias: 'h', type: Boolean },
         { name: 'albums', type: Boolean },
+        { name: 'download-album', type: String },
         { name: 'params', type: String, multiple: true },
         { name: 'verbose', alias: 'v', type: Boolean },
         { name: 'count', alias: 'c', type: Boolean }
@@ -42,7 +42,7 @@ async function main() {
 
     if (options.albums) {
         const albums = await googlePhotos.listAlbums();
-        console.log(albums);
+        appController.onAlbums(albums);
         return;
     }
 
@@ -54,10 +54,11 @@ async function main() {
     if (options.count) {
         log.info(this, 'all media items', photoDb.count());
     } else if (options.job) {
+        log.info(this, ' asdfdf ', options.job);
         scheduler.triggerNow(options.job, options.params);
     } else {
         log.info(this, '===== App Started =====');
-        scheduler.createJobs();
+        scheduler.scheduleJobs();
         scheduler.triggerNow('appStartupJob', []);
     }
 }

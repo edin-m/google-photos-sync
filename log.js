@@ -41,5 +41,6 @@ class Log {
 }
 
 module.exports = {
+    Log,
     log: new Log
 };
