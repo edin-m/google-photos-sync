@@ -46,7 +46,15 @@ $ node app -c
 $ node app --job <job-name> --params <job-params-space-separated>
 ```
 
-For a full list of jobs and job parameters, check out jobs.js.
+```js
+$ node app --job probeMediaItemRefresh --params <<renewIfOlderThanDays>> <<numberOfItems>>
+
+$ node app --job downloadMediaItemFile --params <<numberOfItems>>
+
+$ node app --job searchMediaItemsJob --params <<numOfDaysBack>> <<limitNumOfItems>>
+
+$ node app --job appStartupJob
+```
 
 # TODO
 

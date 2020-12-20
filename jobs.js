@@ -24,7 +24,7 @@ class Scheduler {
             searchMediaItemsJob: {
                 fn: this._searchMediaItemsJob,
                 params: [Number, Number],
-                description: 'numOfDaysBack, numOfItems'
+                description: 'numOfDaysBack, limitNumOfItems'
             },
             refreshAlbums: {
                 fn: this._refreshAlbums,

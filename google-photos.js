@@ -187,7 +187,8 @@ class GooglePhotos {
 
         if (mediaItem.mediaMetadata.photo) {
             const { width, height } = mediaItem.mediaMetadata;
-            downloadParams += `w${width}-h${height}`;
+            // using =d downloads it in the original resolution
+            downloadParams = "d";
         }
 
         return `${mediaItem.baseUrl}=${downloadParams}`;
