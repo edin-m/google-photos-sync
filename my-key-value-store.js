@@ -50,6 +50,7 @@ function Store(filePath, opts) {
         return this.getAll().length;
     };
 
+    // TODO: (maybe) add orderFn
     this.getByFilter = function(filterFn, limit) {
         const selected = Object.keys(this.data);
 

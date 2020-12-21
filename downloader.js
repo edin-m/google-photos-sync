@@ -10,8 +10,13 @@ const { SearchFilters, DateFilter } = require('./google-photos');
 
 const config = require('./config.json');
 
-class Downloader {
+const EventEmitter = require('events').EventEmitter;
+
+class Downloader extends EventEmitter {
+
     constructor(photoDb, googlePhotos, downloadPath) {
+        super();
+
         this.photoDb = photoDb;
         this.googlePhotos = googlePhotos;
 
@@ -31,7 +36,7 @@ class Downloader {
         log.info(this, 'searchMediaItems', numOfDaysBack, hintNumOfItemsLimit);
         const searchFilters = this._createSearchFilters(numOfDaysBack);
 
-        return this._search(searchFilters, hintNumOfItemsLimit);
+        await this._search(searchFilters, hintNumOfItemsLimit);
     }
 
     _createSearchFilters(numOfDaysBack) {
@@ -55,19 +60,21 @@ class Downloader {
     }
 
     async _search(searchFilters, hintNumOfItemsLimit) {
-        const mediaItems = [];
         let nextPageToken = null;
+        let totalNum = 0;
 
         const pageSize = Math.min(this.pageSize, hintNumOfItemsLimit);
         do {
+            const mediaItems = [];
             const body = await this.googlePhotos.search(searchFilters, pageSize, nextPageToken);
             nextPageToken = body.nextPageToken;
             body.mediaItems.forEach(mediaItem => mediaItems.push(mediaItem));
 
-            log.verbose(this, `searchMediaItems found: ${body.mediaItems.length} total found: ${mediaItems.length} next page: ${!!nextPageToken}`);
-        } while (nextPageToken && mediaItems.length < hintNumOfItemsLimit);
+            log.info(this, `searchMediaItems found: ${body.mediaItems.length} total found: ${mediaItems.length} next page: ${!!nextPageToken}`);
 
-        return mediaItems;
+            this.emit('media-items', mediaItems);
+            totalNum += mediaItems.length;
+        } while (nextPageToken && totalNum < hintNumOfItemsLimit);
     }
 
     async downloadMediaItemFiles(mediaItems) {
@@ -125,6 +132,7 @@ class Downloader {
         return filename;
     }
 
+    // Probes content-length in case the item has changed
     async probeMediaItems(mediaItemIds) {
         const mediaItems = await this.googlePhotos.batchGet(mediaItemIds);
 

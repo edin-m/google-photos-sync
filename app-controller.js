@@ -26,7 +26,13 @@ const __referenceStoredItem = {
     }
 };
 
+/**
+MediaItem is a Google Photos API data structure containing item metadata.
+StoredItem is MediaItem + app metadata { mediaItem, appData }
+*/
+
 class AppController {
+
     constructor(photoDb, albumDb, googlePhotos, downloadPath) {
         this.photoDb = photoDb;
         this.albumDb = albumDb;
@@ -161,6 +167,7 @@ class AppController {
         const forDownload = this._chooseFilesForDownload(storedItems, contentLengthMap);
         log.verbose(this, 'onProbedMediaItems for download', forDownload.length);
 
+        // resets download metadata of updated items so they can be redownloaded
         forDownload
             .map(storedItem => {
                 storedItem.appData.download = null;

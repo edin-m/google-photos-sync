@@ -13,6 +13,18 @@ const Scheduler = require('./jobs');
 const AppController = require('./app-controller');
 const { log } = require('./log');
 
+process.on('uncaughtException', (err, origin) => {
+  fs.writeSync(
+    './crash.txt',
+    `Caught exception: ${err}\n` +
+    `Exception origin: ${origin}`
+  );
+});
+
+setTimeout(() => {
+  console.log('This will still run.');
+}, 500);
+
 async function main() {
     const photoDb = new Store('secrets/photos.data');
     const albumDb = new Store('secrets/albums.db');
@@ -54,7 +66,7 @@ async function main() {
     if (options.count) {
         log.info(this, 'all media items', photoDb.count());
     } else if (options.job) {
-        log.info(this, ' asdfdf ', options.job);
+        log.info(this, 'Job ', options.job);
         scheduler.triggerNow(options.job, options.params);
     } else {
         log.info(this, '===== App Started =====');

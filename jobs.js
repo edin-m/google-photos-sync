@@ -37,11 +37,20 @@ class Scheduler {
                 description: '()'
             }
         }
+
+        this.downloader.on('media-items', (mediaItems) => {
+            this.appController.onMediaItemsDownloaded(mediaItems);
+        });
     }
 
     scheduleJobs() {
+        log.info(this, 'Scheduling searchMediaItemsJob');
         this.jobs.push(this._createMediaItemSearchJob());
+
+        log.info(this, 'Scheduling probeMediaItems');
         this.jobs.push(this._createProbeMediaItemRefreshJob());
+
+        log.info(this, 'Scheduling downloadMediaItemFile');
         this.jobs.push(this._createDownloadMediaItemFilesJob());
     }
 
@@ -121,8 +130,8 @@ class Scheduler {
             numOfItems = 9999999999;
         }
 
-        this.downloader.searchMediaItems(numOfDaysBack, numOfItems).then(mediaItems => {
-            this.appController.onMediaItemsDownloaded(mediaItems);
+        this.downloader.searchMediaItems(numOfDaysBack, numOfItems).then(() => {
+            log.info(this, 'Finished searchMediaItems');
         }).catch(err => console.error(err));
     }
 

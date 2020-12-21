@@ -49,7 +49,7 @@ $ node app --job <job-name> --params <job-params-space-separated>
 ```js
 $ node app --job probeMediaItemRefresh --params <<renewIfOlderThanDays>> <<numberOfItems>>
 
-$ node app --job downloadMediaItemFile --params <<numberOfItems>>
+$ node app --job downloadMediaItemFile --params <<limitNumberOfItems>>
 
 $ node app --job searchMediaItemsJob --params <<numOfDaysBack>> <<limitNumOfItems>>
 

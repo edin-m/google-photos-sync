@@ -3,11 +3,11 @@
   "albumsPath": "google/albums",
   "mediaItemsRefresh": {
     "jobCron": "*/30 * * * *",
-    "numberOfItems": 100
+    "numberOfItems": 10
   },
   "mediaItemSearchRefresh": {
     "jobCron": "*/5 * * * *",
-    "searchDaysBack": 1
+    "searchDaysBack": 10
   },
   "probeMediaItemsRefresh": {
     "jobCron": "*/10 * * * *",
