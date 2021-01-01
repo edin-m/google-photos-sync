@@ -186,7 +186,7 @@ class GooglePhotos {
         }
 
         if (mediaItem.mediaMetadata.photo) {
-            const { width, height } = mediaItem.mediaMetadata;
+            // const { width, height } = mediaItem.mediaMetadata;
             // using =d downloads it in the original resolution
             downloadParams = "d";
         }
@@ -194,6 +194,7 @@ class GooglePhotos {
         return `${mediaItem.baseUrl}=${downloadParams}`;
     }
 
+    // get headers can be moved to authservice
     async _getHeaders() {
         const authToken = await this.authService.getToken();
         return this._headers(authToken.access_token);

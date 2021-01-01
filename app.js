@@ -14,16 +14,12 @@ const AppController = require('./app-controller');
 const { log } = require('./log');
 
 process.on('uncaughtException', (err, origin) => {
-  fs.writeSync(
+  fs.writeFileSync(
     './crash.txt',
     `Caught exception: ${err}\n` +
     `Exception origin: ${origin}`
   );
 });
-
-setTimeout(() => {
-  console.log('This will still run.');
-}, 500);
 
 async function main() {
     const photoDb = new Store('secrets/photos.data');
