@@ -8,8 +8,9 @@ const { log } = require('./log');
  */
 class GooglePhotos {
 
-    constructor(authService) {
+    constructor(authService, req = request) {
         this.authService = authService;
+        this.request = req;
     }
 
     static photosApiReadOnlyScope() {
@@ -151,7 +152,7 @@ class GooglePhotos {
 
         return new Promise((resolve, reject) => {
             const url = this._createDownloadUrl(mediaItem);
-            const probeReq = request(url, { headers });
+            const probeReq = this.request(url, { headers });
 
             probeReq.on('response', (res) => {
                 res.on('data', function (data) {
@@ -159,12 +160,14 @@ class GooglePhotos {
                         statusCode: res.statusCode,
                         headers: res.headers
                     });
+                    // todo deprecated
                     probeReq.abort();
                 });
             });
 
             probeReq.on('error', (err) => {
                 console.error(err);
+                // todo deprecated
                 probeReq.abort();
                 reject(err);
             });
@@ -175,7 +178,7 @@ class GooglePhotos {
         const headers = await this._getHeaders();
         const url = this._createDownloadUrl(mediaItem);
 
-        return request(url, { headers });
+        return this.request(url, { headers });
     }
 
     _createDownloadUrl(mediaItem) {
