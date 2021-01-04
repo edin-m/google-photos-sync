@@ -72,7 +72,7 @@ class GooglePhotos {
         const headers = await this._getHeaders();
 
         return new Promise((resolve, reject) => {
-            request(url, { headers }, (err, resp, body) => {
+            this.request(url, { headers }, (err, resp, body) => {
                 if (err) {
                     return reject(`Error when GET ${url} ${err}`);
                 }
@@ -104,6 +104,8 @@ class GooglePhotos {
     }
 
     async search(searchFilter, numOfItems, pageToken = null) {
+        // todo searchFilter is mutated, possible issue
+
         const requestBody = {
             pageSize: numOfItems
         };
@@ -127,7 +129,7 @@ class GooglePhotos {
         const headers = await this._getHeaders();
 
         return new Promise((resolve, reject) => {
-            request.post({ url, headers, json: requestBody }, (err, res, body) => {
+            this.request.post({ url, headers, json: requestBody }, (err, res, body) => {
                 if (err) {
                     return reject(`Error with POST:search ${url} ${err}`);
                 }

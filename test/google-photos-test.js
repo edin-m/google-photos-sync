@@ -26,11 +26,66 @@ describe('google-photos', () => {
             googlePhotosService = new GooglePhotos(authServiceMock);
         });
 
+        it('should test search', async () => {
+            const fake = sinon.fake.resolves(true);
+            googlePhotosService._search = fake;
+
+            const filters = new SearchFilters();
+            filters.setDateFilter({ dates: [], ranges: [] });
+            const pageToken = 'pageToken';
+
+            await googlePhotosService.search(filters, 11, pageToken);
+            const args = fake.getCall(0).args[0];
+
+            expect(args.pageSize).to.equal(11);
+            expect(args.filters.dateFilter.dates).to.have.lengthOf(0);
+            expect(args.filters.dateFilter.ranges).to.have.lengthOf(0);
+        });
+
+        it('should test _search success', async () => {
+            const call = cb => cb(null, {}, { mediaItems: [mediaItem], nextPageToken: 'nextPageToken' });
+            const requestMock = { post: (_, cb) => call(cb) };
+            requestMock.post = sinon.spy(requestMock.post);
+            googlePhotosService.request = requestMock;
+
+            const res = await googlePhotosService._search({});
+
+            expect(res.mediaItems.length).to.equal(1);
+            expect(res.nextPageToken).to.equal('nextPageToken');
+            expect(requestMock.post.getCall(0).args[0].url)
+                .to.equal('https://photoslibrary.googleapis.com/v1/mediaItems:search');
+        });
+
+        it('should test _search request error', (done) => {
+            const requestMock = { post: (_, cb) => cb('error') };
+            googlePhotosService.request = requestMock;
+
+            googlePhotosService
+                ._search({})
+                .catch(err => {
+                    expect(/Error with POST/.test(err)).to.equal(true);
+                })
+                .finally(done);
+        });
+
+        it('should test _search body error', (done) => {
+            const call = cb => cb(null, null, { error: { code: '5052' }});
+            const requestMock = { post: (_, cb) => call(cb) };
+            googlePhotosService.request = requestMock;
+
+            googlePhotosService
+                ._search({})
+                .catch(err => {
+                    expect(/5052/.test(err)).to.equal(true);
+                    done();
+                });
+        });
+
         it('should test probeUrlForContentLength() success', (done) => {
             const probeReq = new EventEmitter;
-            const stub = sinon.stub().returns(probeReq);
+            const requestMock = sinon.stub().returns(probeReq);
             const abortStub = sinon.stub();
-            googlePhotosService.request = stub;
+            googlePhotosService.request = requestMock;
             const res = new EventEmitter;
             probeReq.abort = abortStub;
 
@@ -38,7 +93,7 @@ describe('google-photos', () => {
                 .probeUrlForContentLength(mediaItem)
                 .then(obj => {
                     expect(obj.statusCode).to.equal(201);
-                    expect(stub.called).to.equal(true);
+                    expect(requestMock.called).to.equal(true);
                     done();
                 })
                 .catch(done);
@@ -51,16 +106,16 @@ describe('google-photos', () => {
 
         it('should test probeUrlForContentLength() error', (done) => {
             const probeReq = new EventEmitter;
-            const stub = sinon.stub().returns(probeReq);
+            const requestMock = sinon.stub().returns(probeReq);
             const abortStub = sinon.stub();
-            googlePhotosService.request = stub;
+            googlePhotosService.request = requestMock;
             probeReq.abort = abortStub;
 
             googlePhotosService
                 .probeUrlForContentLength(mediaItem)
                 .catch(err => {
                     expect(err).to.equal('500 error');
-                    expect(stub.called).to.equal(true);
+                    expect(requestMock.called).to.equal(true);
                     done();
                 });
 
