@@ -209,34 +209,27 @@ class AppController {
 
     _createDownloadFilterFn() {
         return value => {
-            let isContentLengthSame = false;
             let isFileExists = false;
             let isFileSizeSame = false;
 
             if (value.mediaItem) {
-                if (value.appData.download && value.appData.probe) {
-                    isContentLengthSame = value.appData.probe.contentLength === value.appData.download.contentLength;
-                } else {
-                    isContentLengthSame = true;
-                }
-
                 const filename = this._getStoredItemFilename(value);
                 const filepath = path.join(this.downloadPath, filename);
                 isFileExists = fs.existsSync(filepath);
 
                 if (isFileExists) {
-                    const contentLength = lo.get(value.appData, 'probe.contentLength') || lo.get(value.appData, 'download.contentLength');
+                    const contentLength = lo.get(value.appData, 'download.contentLength');
                     const stat = fs.statSync(filepath);
                     isFileSizeSame = stat.size === contentLength;
                 }
             }
 
-            return !(isContentLengthSame && isFileExists && isFileSizeSame);
+            return !(isFileExists && isFileSizeSame);
         };
     }
 
-    getStoredItemsByFilenameMap(filenames) {
-        const filenamesSet = new Set(filenames);
+    getStoredItemsByFilenameMap(filenamesOnDisk) {
+        const filenamesSet = new Set(filenamesOnDisk);
 
         const map = {};
 

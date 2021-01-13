@@ -36,7 +36,7 @@ class Scheduler {
                 params: [],
                 description: '()'
             }
-        }
+        };
 
         this.downloader.on('media-items', (mediaItems) => {
             this.appController.onMediaItemsDownloaded(mediaItems);
@@ -94,6 +94,7 @@ class Scheduler {
     }
 
     _probeMediaItemRefreshFn(renewIfOlderThanDays, numberOfItems) {
+        return;
         log.info(this, '');
         log.info(this, '_probeMediaItemRefreshFn', renewIfOlderThanDays, numberOfItems);
 
@@ -151,8 +152,7 @@ class Scheduler {
         );
 
         let files = existingFiles
-            .filter(file => storedItemsMap.hasOwnProperty(file.filename))
-            .filter(file => this.appController.hasStoredItemDiscrepancy(storedItemsMap[file.filename].storedItem));
+            .filter(file => storedItemsMap.hasOwnProperty(file.filename));
 
         log.info(this, 'files with discrepancies', files.length);
 
